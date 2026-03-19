@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var showOnboarding = false
     @State private var showConsentSheet = false
     @State private var audioLevel: Float = 0
+    @State private var isHoveringNotes = false
 
     var body: some View {
         bodyWithModifiers
@@ -265,14 +266,20 @@ struct ContentView: View {
                 openWindow(id: "notes")
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "clock.arrow.circlepath")
+                    Image(systemName: "note.text")
                         .font(.system(size: 11))
                     Text("Past Meetings")
                         .font(.system(size: 11))
                 }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(isHoveringNotes ? Color.primary.opacity(0.06) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
+            .onHover { hovering in isHoveringNotes = hovering }
+            .help("View past meeting notes")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
