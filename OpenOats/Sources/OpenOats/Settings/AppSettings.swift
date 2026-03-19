@@ -189,6 +189,7 @@ final class AppSettings {
         // One-time migrations from previous bundle IDs
         Self.migrateFromOldBundleIfNeeded(defaults: defaults)
         Self.migrateFromOpenGranolaIfNeeded(defaults: defaults)
+        Self.migrateKeychainServiceIfNeeded(defaults: defaults)
 
         self.kbFolderPath = defaults.string(forKey: "kbFolderPath") ?? ""
 
@@ -379,6 +380,24 @@ final class AppSettings {
         }
     }
 
+    /// Migrate keychain entries from the old "com.opengranola.app" service to the
+    /// current "com.openoats.app" service. Needed for existing users whose keychain
+    /// was written under the previous bundle ID.
+    private static func migrateKeychainServiceIfNeeded(defaults: UserDefaults) {
+        let migrationKey = "didMigrateKeychainToOpenOats"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+        defer { defaults.set(true, forKey: migrationKey) }
+
+        let oldService = "com.opengranola.app"
+        let keychainKeys = ["openRouterApiKey", "voyageApiKey", "openAIEmbedApiKey"]
+        for key in keychainKeys {
+            if KeychainHelper.load(key: key) == nil,
+               let oldValue = loadKeychain(service: oldService, key: key) {
+                KeychainHelper.save(key: key, value: oldValue)
+            }
+        }
+    }
+
     /// Read a keychain entry from a specific service (used for migration only).
     private static func loadKeychain(service: String, key: String) -> String? {
         let query: [String: Any] = [
@@ -430,7 +449,7 @@ final class AppSettings {
 // MARK: - Keychain Helper
 
 enum KeychainHelper {
-    private static let service = "com.opengranola.app"
+    private static let service = "com.openoats.app"
 
     static func save(key: String, value: String) {
         guard let data = value.data(using: .utf8) else { return }

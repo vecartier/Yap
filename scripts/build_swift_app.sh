@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.."
 ROOT_DIR="$(pwd)"
 SWIFT_DIR="$ROOT_DIR/OpenOats"
 APP_NAME="OpenOats"
-BUNDLE_ID="com.opengranola.app"
+BUNDLE_ID="com.openoats.app"
 SKIP_SIGN="${SKIP_SIGN:-0}"
 SKIP_INSTALL="${SKIP_INSTALL:-0}"
 

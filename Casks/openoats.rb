@@ -19,6 +19,10 @@ cask "openoats" do
 
   zap trash: [
     "~/Library/Application Support/OpenOats",
+    "~/Library/Caches/com.openoats.app",
+    "~/Library/HTTPStorages/com.openoats.app",
+    "~/Library/Preferences/com.openoats.app.plist",
+    "~/Library/Saved Application State/com.openoats.app.savedState",
     "~/Library/Caches/com.opengranola.app",
     "~/Library/HTTPStorages/com.opengranola.app",
     "~/Library/Preferences/com.opengranola.app.plist",
