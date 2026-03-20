@@ -277,6 +277,10 @@ actor MeetingDetector {
 
     // MARK: - Default Meeting Apps
 
+    static var bundledMeetingApps: [MeetingAppEntry] {
+        defaultMeetingApps
+    }
+
     private static let defaultMeetingApps: [MeetingAppEntry] = [
         MeetingAppEntry(bundleID: "us.zoom.xos", displayName: "Zoom"),
         MeetingAppEntry(bundleID: "com.microsoft.teams2", displayName: "Microsoft Teams"),

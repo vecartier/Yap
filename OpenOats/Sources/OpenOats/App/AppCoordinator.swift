@@ -240,6 +240,13 @@ final class AppCoordinator {
         // 2. Drain delayed JSONL writes
         await sessionStore.awaitPendingWrites()
 
+        // 2b. Backfill refined text into JSONL from TranscriptStore
+        // The 5-second delayed writes often miss refinedText because LLM calls take longer.
+        // By now both the refinement engine and pending writes have drained, so the
+        // TranscriptStore has the final refined text for all utterances.
+        let utterancesSnapshot = transcriptStore.utterances
+        await sessionStore.backfillRefinedText(from: utterancesSnapshot)
+
         // 3. Build sidecar from this session's transcript data
         let sessionID = await sessionStore.currentSessionID ?? "unknown"
         let utteranceCount = transcriptStore.utterances.count

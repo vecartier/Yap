@@ -56,6 +56,7 @@ final class MicCapture: @unchecked Sendable {
             diagLog("[MIC-1b] input node ready")
 
             // Set input device before accessing inputNode format
+            var resolvedDeviceID: AudioDeviceID?
             if let id = deviceID {
                 guard let inAU = inputNode.audioUnit else {
                     let msg = "inputNode has no audio unit after prepare"
@@ -74,16 +75,29 @@ final class MicCapture: @unchecked Sendable {
                     UInt32(MemoryLayout<AudioDeviceID>.size)
                 )
                 diagLog("[MIC-2] setInputDevice status=\(inStatus) (0=ok)")
+                resolvedDeviceID = id
             } else {
                 diagLog("[MIC-2] no deviceID, using system default")
+                resolvedDeviceID = Self.defaultInputDeviceID()
             }
 
             let format = inputNode.outputFormat(forBus: 0)
 
-            diagLog("[MIC-3] inputNode format: sr=\(format.sampleRate) ch=\(format.channelCount) interleaved=\(format.isInterleaved) commonFormat=\(format.commonFormat.rawValue)")
+            // The inputNode format may lag behind a device switch (e.g. USB mic at 48 kHz
+            // while the engine still reports 44.1 kHz). Query the hardware sample rate
+            // directly and prefer it when it differs from the inputNode format.
+            var sampleRate = format.sampleRate
+            if let devID = resolvedDeviceID,
+               let hwRate = Self.deviceNominalSampleRate(for: devID),
+               hwRate > 0, hwRate != sampleRate {
+                diagLog("[MIC-3] hardware sr=\(hwRate) differs from inputNode sr=\(sampleRate), using hardware rate")
+                sampleRate = hwRate
+            }
 
-            guard format.sampleRate > 0 && format.channelCount > 0 else {
-                let msg = "Invalid audio format: sr=\(format.sampleRate) ch=\(format.channelCount)"
+            diagLog("[MIC-3] inputNode format: sr=\(format.sampleRate) ch=\(format.channelCount) interleaved=\(format.isInterleaved) commonFormat=\(format.commonFormat.rawValue), effective sr=\(sampleRate)")
+
+            guard sampleRate > 0 && format.channelCount > 0 else {
+                let msg = "Invalid audio format: sr=\(sampleRate) ch=\(format.channelCount)"
                 diagLog("[MIC-3-FAIL] \(msg)")
                 errorHolder.value = msg
                 continuation.finish()
@@ -91,7 +105,7 @@ final class MicCapture: @unchecked Sendable {
             }
 
             guard let tapFormat = AVAudioFormat(
-                standardFormatWithSampleRate: format.sampleRate,
+                standardFormatWithSampleRate: sampleRate,
                 channels: format.channelCount
             ) else {
                 let msg = "Failed to build tap format from input format"
@@ -317,6 +331,19 @@ final class MicCapture: @unchecked Sendable {
         let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &uid)
         guard status == noErr, let uid else { return nil }
         return uid.takeRetainedValue() as String
+    }
+
+    /// Query the nominal sample rate of a CoreAudio device directly from hardware.
+    static func deviceNominalSampleRate(for deviceID: AudioDeviceID) -> Double? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyNominalSampleRate,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var sampleRate: Float64 = 0
+        var size = UInt32(MemoryLayout<Float64>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &sampleRate)
+        return status == noErr ? sampleRate : nil
     }
 
     static func defaultInputDeviceID() -> AudioDeviceID? {

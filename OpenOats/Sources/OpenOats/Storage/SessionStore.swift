@@ -128,6 +128,89 @@ actor SessionStore {
         }
     }
 
+    /// Rewrite the current JSONL file, backfilling `refinedText` from the in-memory TranscriptStore.
+    ///
+    /// The 5-second delayed write often captures `refinedText` as nil because the LLM refinement
+    /// call hasn't finished yet. This method is called after both the refinement engine and pending
+    /// writes have drained, so the TranscriptStore now has the final refined text for all utterances.
+    func backfillRefinedText(from utterances: [Utterance]) {
+        guard let currentFile else { return }
+
+        // Close the file handle so we can read/rewrite the file safely
+        try? fileHandle?.close()
+        fileHandle = nil
+
+        guard let content = try? String(contentsOf: currentFile, encoding: .utf8) else { return }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let lines = content.components(separatedBy: "\n").filter { !$0.isEmpty }
+        guard !lines.isEmpty else { return }
+
+        // Build a lookup from (timestamp, speaker) -> refinedText
+        // Uses ISO8601 string representation of the date for reliable matching
+        let iso8601Formatter = ISO8601DateFormatter()
+        iso8601Formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var refinedLookup: [String: String] = [:]
+        for utterance in utterances {
+            guard let refined = utterance.refinedText else { continue }
+            let key = "\(iso8601Formatter.string(from: utterance.timestamp))|\(utterance.speaker.rawValue)"
+            refinedLookup[key] = refined
+        }
+
+        guard !refinedLookup.isEmpty else {
+            // No refined text to backfill; reopen file handle and return
+            fileHandle = try? FileHandle(forWritingTo: currentFile)
+            return
+        }
+
+        var updatedLines: [String] = []
+        var anyUpdated = false
+
+        for line in lines {
+            guard let data = line.data(using: .utf8),
+                  var record = try? decoder.decode(SessionRecord.self, from: data) else {
+                updatedLines.append(line)
+                continue
+            }
+
+            // Only backfill if the record doesn't already have refinedText
+            if record.refinedText == nil {
+                let key = "\(iso8601Formatter.string(from: record.timestamp))|\(record.speaker.rawValue)"
+                if let refined = refinedLookup[key] {
+                    record = SessionRecord(
+                        speaker: record.speaker,
+                        text: record.text,
+                        timestamp: record.timestamp,
+                        suggestions: record.suggestions,
+                        kbHits: record.kbHits,
+                        suggestionDecision: record.suggestionDecision,
+                        surfacedSuggestionText: record.surfacedSuggestionText,
+                        conversationStateSummary: record.conversationStateSummary,
+                        refinedText: refined
+                    )
+                    anyUpdated = true
+                }
+            }
+
+            if let encoded = try? encoder.encode(record),
+               let jsonString = String(data: encoded, encoding: .utf8) {
+                updatedLines.append(jsonString)
+            } else {
+                updatedLines.append(line)
+            }
+        }
+
+        if anyUpdated {
+            let newContent = updatedLines.joined(separator: "\n") + "\n"
+            try? newContent.write(to: currentFile, atomically: true, encoding: .utf8)
+        }
+
+        // Reopen file handle for any subsequent writes before endSession()
+        fileHandle = try? FileHandle(forWritingTo: currentFile)
+    }
+
     func endSession() {
         try? fileHandle?.close()
         fileHandle = nil
