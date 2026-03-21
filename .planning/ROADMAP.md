@@ -12,7 +12,7 @@ Three phases transform the OpenOats fork into a focused transcript-to-summary-to
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Strip knowledge base, add solo/mic-only mode, establish MeetingMode enum
+- [x] **Phase 1: Foundation** - Strip knowledge base, add solo/mic-only mode, establish MeetingMode enum (completed 2026-03-21)
 - [ ] **Phase 2: Summary Engine** - Auto-generate structured summaries on session end, save to disk
 - [ ] **Phase 3: Share UI** - Post-meeting review screen with formatted summary and copy-to-clipboard export
 
@@ -71,6 +71,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/2 | In Progress|  |
+| 1. Foundation | 2/2 | Complete   | 2026-03-21 |
 | 2. Summary Engine | 0/2 | Not started | - |
 | 3. Share UI | 0/2 | Not started | - |

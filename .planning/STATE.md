@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-foundation-01-01-PLAN.md
-last_updated: "2026-03-21T12:32:08.764Z"
+stopped_at: Completed 01-foundation-01-02-PLAN.md
+last_updated: "2026-03-21T12:41:19.534Z"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -46,6 +46,7 @@ Plan: 2 of 2 (next)
 - Trend: baseline
 
 *Updated after each plan completion*
+| Phase 01-foundation P02 | 6 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,8 @@ Recent decisions affecting current work:
 - Project: Summary hooks into AppCoordinator after awaitPendingWrites(), not from UI
 - [Phase 01-foundation]: Remove KB types from SessionRecord entirely; old JSONL files decode cleanly via Codable ignoring unknown keys
 - [Phase 01-foundation]: Add removeStaleKBKeychainEntriesIfNeeded migration to clean voyageApiKey and openAIEmbedApiKey from Keychain
+- [Phase 01-foundation]: TranscriptLogger uses String labels; exhaustive Speaker switch lives in callers (ContentView.speakerLabel, MarkdownMeetingWriter.speakerLabel)
+- [Phase 01-foundation]: currentMeetingMode stored on TranscriptionEngine so mic hot-restarts preserve correct speaker across device swaps
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T12:32:08.759Z
-Stopped at: Completed 01-foundation-01-01-PLAN.md
+Last session: 2026-03-21T12:41:19.530Z
+Stopped at: Completed 01-foundation-01-02-PLAN.md
 Resume file: None

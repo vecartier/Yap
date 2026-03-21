@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Solo Mode
 
-- [ ] **SOLO-01**: User can start a mic-only recording session for in-person meetings via menu bar
-- [ ] **SOLO-02**: User can start a mic-only recording session for personal voice memos via menu bar
-- [ ] **SOLO-03**: Solo mode produces a timestamped transcript identical in format to call transcripts
-- [ ] **SOLO-04**: Solo mode uses single-speaker labeling (no "them" speaker)
+- [x] **SOLO-01**: User can start a mic-only recording session for in-person meetings via menu bar
+- [x] **SOLO-02**: User can start a mic-only recording session for personal voice memos via menu bar
+- [x] **SOLO-03**: Solo mode produces a timestamped transcript identical in format to call transcripts
+- [x] **SOLO-04**: Solo mode uses single-speaker labeling (no "them" speaker)
 
 ### Cleanup
 
@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SOLO-01 | Phase 1 | Pending |
-| SOLO-02 | Phase 1 | Pending |
-| SOLO-03 | Phase 1 | Pending |
-| SOLO-04 | Phase 1 | Pending |
+| SOLO-01 | Phase 1 | Complete |
+| SOLO-02 | Phase 1 | Complete |
+| SOLO-03 | Phase 1 | Complete |
+| SOLO-04 | Phase 1 | Complete |
 | CLEAN-01 | Phase 1 | Complete |
 | CLEAN-02 | Phase 1 | Complete |
 | CLEAN-03 | Phase 1 | Complete |
