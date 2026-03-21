@@ -63,11 +63,11 @@ Plans:
   1. Selecting a past meeting shows its date, time, duration, and type in a metadata header at the top of the detail pane
   2. Full transcript is visible below the (initially empty) summary section; detail pane does not crash when no summary file exists yet
   3. A Slack-formatted message with header and all summary sections is shown in the detail pane with a one-click copy-to-clipboard button
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: PastMeetingDetailView + DetailRouter + metadata header (WIN-04)
-- [ ] 03-02: Slack message formatting + copy button (SLCK-01, SLCK-02, SLCK-03)
+- [ ] 03-01-PLAN.md — SlackFormatter utility + transcript timestamp logic (TDD) (SLCK-01, SLCK-02)
+- [ ] 03-02-PLAN.md — PastMeetingDetailView + DetailRouter wiring + human verify (WIN-04, SLCK-03)
 
 ---
 
@@ -80,7 +80,7 @@ Plans:
   2. Stopping a recording automatically navigates the detail pane to the newly completed session
   3. Menu bar popover shows only recording status, start/stop buttons, and "Open MeetingScribe" — no transcript text
   4. ContentView.swift and NotesView.swift no longer exist in the project
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 04-01: LiveDetailView + MeetingListItem enum + DetailRouter live branch (LIVE-01, LIVE-02, LIVE-03, LIVE-04)
@@ -97,7 +97,7 @@ Plans:
   2. Summary generation works with both OpenRouter (cloud) and Ollama (local) providers
   3. A Markdown summary file appears in ~/Documents/OpenOats/ alongside the transcript after each session
   4. Settings (LLM provider, transcription model, API keys, audio input device) are accessible from a sidebar tab in the main window
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 05-01: SummaryEngine actor + two-phase LLM prompt + AppCoordinator hook (SUMM-01, SUMM-02, SUMM-03, SUMM-04, SUMM-05, SUMM-06, SUMM-07, SUMM-08, SUMM-09)
@@ -113,7 +113,7 @@ Plans:
   1. Typing in the search field filters the sidebar meeting list in real-time without any UI stutter or main-thread blocking
   2. Search matches text in both transcripts and summaries across all past meetings
   3. User can export a meeting to a properly paginated multi-page PDF (summary + transcript) via a save dialog
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 06-01: Full-text search with background Task + 250ms debounce (SRCH-01, SRCH-02, SRCH-03)
