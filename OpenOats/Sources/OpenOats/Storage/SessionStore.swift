@@ -77,12 +77,11 @@ actor SessionStore {
         }
     }
 
-    /// Owns the delayed THEM write: sleeps 5 seconds to capture pipeline results, then writes.
+    /// Owns the delayed THEM write: sleeps 5 seconds to capture refined text, then writes.
     /// The actor tracks in-flight delayed writes so `awaitPendingWrites()` can drain them.
     func appendRecordDelayed(
         baseRecord: SessionRecord,
         utteranceID: UUID? = nil,
-        suggestionEngine: SuggestionEngine?,
         transcriptStore: TranscriptStore?
     ) {
         pendingWrites += 1
@@ -91,9 +90,6 @@ actor SessionStore {
 
             guard let self else { return }
 
-            // Capture pipeline results after delay
-            let decision = await suggestionEngine?.lastDecision
-            let latestSuggestion = await suggestionEngine?.suggestions.first
             let summary = await transcriptStore?.conversationState.shortSummary
 
             // Capture refined text from transcript store (may have been updated by refinement engine)
@@ -108,10 +104,6 @@ actor SessionStore {
                 speaker: baseRecord.speaker,
                 text: baseRecord.text,
                 timestamp: baseRecord.timestamp,
-                suggestions: latestSuggestion.map { [$0.text] },
-                kbHits: latestSuggestion?.kbHits.map { $0.sourceFile },
-                suggestionDecision: decision,
-                surfacedSuggestionText: decision?.shouldSurface == true ? latestSuggestion?.text : nil,
                 conversationStateSummary: summary?.isEmpty == false ? summary : nil,
                 refinedText: refinedText
             )
@@ -196,10 +188,6 @@ actor SessionStore {
                         speaker: record.speaker,
                         text: record.text,
                         timestamp: record.timestamp,
-                        suggestions: record.suggestions,
-                        kbHits: record.kbHits,
-                        suggestionDecision: record.suggestionDecision,
-                        surfacedSuggestionText: record.surfacedSuggestionText,
                         conversationStateSummary: record.conversationStateSummary,
                         refinedText: refined
                     )

@@ -91,26 +91,6 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(TranscriptionModel.whisperBase.localeFieldTitle, "Locale")
     }
 
-    // MARK: - EmbeddingProvider
-
-    func testEmbeddingProviderAllCases() {
-        let cases = EmbeddingProvider.allCases
-        XCTAssertEqual(cases.count, 3)
-    }
-
-    func testEmbeddingProviderDisplayNames() {
-        XCTAssertEqual(EmbeddingProvider.voyageAI.displayName, "Voyage AI")
-        XCTAssertEqual(EmbeddingProvider.ollama.displayName, "Ollama")
-        XCTAssertEqual(EmbeddingProvider.openAICompatible.displayName, "OpenAI Compatible")
-    }
-
-    func testEmbeddingProviderRoundTrip() {
-        for provider in EmbeddingProvider.allCases {
-            let restored = EmbeddingProvider(rawValue: provider.rawValue)
-            XCTAssertEqual(restored, provider)
-        }
-    }
-
     // MARK: - AppSettings Defaults
 
     func testAppSettingsDefaultTranscriptionLocale() {
@@ -125,20 +105,4 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertFalse(locale.identifier.isEmpty)
     }
 
-    func testAppSettingsKbFolderURLWhenEmpty() {
-        let settings = AppSettings()
-        let originalPath = settings.kbFolderPath
-        settings.kbFolderPath = ""
-        XCTAssertNil(settings.kbFolderURL)
-        settings.kbFolderPath = originalPath
-    }
-
-    func testAppSettingsKbFolderURLWhenSet() {
-        let settings = AppSettings()
-        let originalPath = settings.kbFolderPath
-        settings.kbFolderPath = "/tmp/test-kb"
-        XCTAssertNotNil(settings.kbFolderURL)
-        XCTAssertEqual(settings.kbFolderURL?.path, "/tmp/test-kb")
-        settings.kbFolderPath = originalPath
-    }
 }

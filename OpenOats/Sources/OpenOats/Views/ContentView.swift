@@ -16,16 +16,11 @@ struct ContentView: View {
         var statusMessage: String?
         var errorMessage: String?
         var needsDownload = false
-        var kbIndexingProgress = ""
-        var suggestions: [Suggestion] = []
-        var isGeneratingSuggestions = false
         var showLiveTranscript = true
         var utterances: [Utterance] = []
         var volatileYouText = ""
         var volatileThemText = ""
-        var kbFolderPath = ""
         var notesFolderPath = ""
-        var voyageApiKey = ""
         var transcriptionModel: TranscriptionModel = .parakeetV2
         var inputDeviceID: AudioDeviceID = 0
     }
@@ -34,8 +29,6 @@ struct ContentView: View {
     @Environment(AppRuntime.self) private var runtime
     @Environment(AppCoordinator.self) private var coordinator
     @Environment(\.openWindow) private var openWindow
-    @State private var knowledgeBase: KnowledgeBase?
-    @State private var suggestionEngine: SuggestionEngine?
     @State private var overlayManager = OverlayManager()
     @AppStorage("isTranscriptExpanded") private var isTranscriptExpanded = true
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
@@ -47,9 +40,7 @@ struct ContentView: View {
     @State private var observedUtteranceCount = 0
     @State private var observedIsRunning = false
     @State private var observedPendingExternalCommandID: UUID?
-    @State private var observedKBFolderPath = ""
     @State private var observedNotesFolderPath = ""
-    @State private var observedVoyageApiKey = ""
     @State private var observedTranscriptionModel: TranscriptionModel = .parakeetV2
     @State private var observedInputDeviceID: AudioDeviceID = 0
 
@@ -67,14 +58,6 @@ struct ContentView: View {
                     .font(.system(size: 13, weight: .semibold))
 
                 Spacer()
-
-                // KB indexing status (subtle, read-only)
-                if !viewState.kbIndexingProgress.isEmpty {
-                    Text(viewState.kbIndexingProgress)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
 
                 Button {
                     openWindow(id: "notes")
@@ -140,23 +123,6 @@ struct ContentView: View {
 
                 Divider()
             }
-
-            // Main content: Suggestions
-            VStack(alignment: .leading, spacing: 0) {
-                Text("SUGGESTIONS")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-                    .tracking(1.5)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 4)
-                SuggestionsView(
-                    suggestions: viewState.suggestions,
-                    isGenerating: viewState.isGeneratingSuggestions
-                )
-            }
-
-            Divider()
 
             // Collapsible transcript (hidden when live transcript is disabled)
             if viewState.showLiveTranscript {
@@ -262,21 +228,10 @@ struct ContentView: View {
             if !hasCompletedOnboarding {
                 showOnboarding = true
             }
-            if knowledgeBase == nil {
-                runtime.ensureServicesInitialized(settings: settings, coordinator: coordinator)
-                let kb = KnowledgeBase(settings: settings)
-                let se = SuggestionEngine(
-                    transcriptStore: coordinator.transcriptStore,
-                    knowledgeBase: kb,
-                    settings: settings
-                )
-                knowledgeBase = kb
-                suggestionEngine = se
-            }
+            runtime.ensureServicesInitialized(settings: settings, coordinator: coordinator)
             overlayManager.defaults = runtime.defaults
             await runtime.seedIfNeeded(coordinator: coordinator)
             refreshViewState()
-            indexKBIfNeeded()
             handlePendingExternalCommandIfPossible()
 
             // Purge recently deleted sessions older than 24h
@@ -329,7 +284,6 @@ struct ContentView: View {
             return
         }
 
-        suggestionEngine?.clear()
         coordinator.handle(.userStarted(.manual()), settings: settings)
     }
 
@@ -339,19 +293,9 @@ struct ContentView: View {
 
     private func toggleOverlay() {
         let content = OverlayContent(
-            suggestions: viewState.suggestions,
-            isGenerating: viewState.isGeneratingSuggestions,
             volatileThemText: viewState.volatileThemText
         )
         overlayManager.toggle(content: content)
-    }
-
-    private func indexKBIfNeeded() {
-        guard let url = settings.kbFolderURL, let kb = knowledgeBase else { return }
-        Task {
-            kb.clear()
-            await kb.index(folderURL: url)
-        }
     }
 
     private func copyTranscript() {
@@ -370,7 +314,7 @@ struct ContentView: View {
 
         switch request.command {
         case .startSession:
-            guard coordinator.transcriptionEngine != nil, suggestionEngine != nil, coordinator.transcriptLogger != nil else {
+            guard coordinator.transcriptionEngine != nil, coordinator.transcriptLogger != nil else {
                 return
             }
             if !viewState.isRunning {
@@ -412,11 +356,8 @@ struct ContentView: View {
             }
         }
 
-        // Trigger suggestions on THEM utterance
+        // Trigger delayed write for THEM utterance (captures refined text after delay)
         if last.speaker == .them {
-            suggestionEngine?.onThemUtterance(last)
-
-            // Delayed write owned by SessionStore (tracks pending writes for drain)
             let baseRecord = SessionRecord(
                 speaker: last.speaker,
                 text: last.text,
@@ -426,7 +367,6 @@ struct ContentView: View {
                 await coordinator.sessionStore.appendRecordDelayed(
                     baseRecord: baseRecord,
                     utteranceID: last.id,
-                    suggestionEngine: suggestionEngine,
                     transcriptStore: coordinator.transcriptStore
                 )
             }
@@ -474,16 +414,11 @@ struct ContentView: View {
         nextViewState.statusMessage = coordinator.transcriptionEngine?.assetStatus
         nextViewState.errorMessage = coordinator.transcriptionEngine?.lastError
         nextViewState.needsDownload = coordinator.transcriptionEngine?.needsModelDownload ?? false
-        nextViewState.kbIndexingProgress = knowledgeBase?.indexingProgress ?? ""
-        nextViewState.suggestions = suggestionEngine?.suggestions ?? []
-        nextViewState.isGeneratingSuggestions = suggestionEngine?.isGenerating ?? false
         nextViewState.showLiveTranscript = settings.showLiveTranscript
         nextViewState.utterances = coordinator.transcriptStore.utterances
         nextViewState.volatileYouText = coordinator.transcriptStore.volatileYouText
         nextViewState.volatileThemText = coordinator.transcriptStore.volatileThemText
-        nextViewState.kbFolderPath = settings.kbFolderPath
         nextViewState.notesFolderPath = settings.notesFolderPath
-        nextViewState.voyageApiKey = settings.voyageApiKey
         nextViewState.transcriptionModel = settings.transcriptionModel
         nextViewState.inputDeviceID = settings.inputDeviceID
 
@@ -494,15 +429,6 @@ struct ContentView: View {
     private func synchronizeDerivedState() {
         let currentViewState = viewState
 
-        if currentViewState.kbFolderPath != observedKBFolderPath {
-            observedKBFolderPath = currentViewState.kbFolderPath
-            if currentViewState.kbFolderPath.isEmpty {
-                knowledgeBase?.clear()
-            } else {
-                indexKBIfNeeded()
-            }
-        }
-
         if currentViewState.notesFolderPath != observedNotesFolderPath {
             observedNotesFolderPath = currentViewState.notesFolderPath
             let url = URL(fileURLWithPath: currentViewState.notesFolderPath)
@@ -510,11 +436,6 @@ struct ContentView: View {
                 await coordinator.transcriptLogger?.updateDirectory(url)
             }
             coordinator.audioRecorder?.updateDirectory(url)
-        }
-
-        if currentViewState.voyageApiKey != observedVoyageApiKey {
-            observedVoyageApiKey = currentViewState.voyageApiKey
-            indexKBIfNeeded()
         }
 
         if currentViewState.transcriptionModel != observedTranscriptionModel {

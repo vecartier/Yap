@@ -57,8 +57,6 @@ final class TranscriptStoreTests: XCTestCase {
             openQuestions: [],
             activeTensions: [],
             recentDecisions: [],
-            themGoals: [],
-            suggestedAnglesRecentlyShown: [],
             lastUpdatedAt: Date()
         )
         store.updateConversationState(state)
@@ -78,8 +76,6 @@ final class TranscriptStoreTests: XCTestCase {
             openQuestions: ["Which DB?"],
             activeTensions: [],
             recentDecisions: ["Use Swift"],
-            themGoals: [],
-            suggestedAnglesRecentlyShown: [],
             lastUpdatedAt: Date()
         )
         store.updateConversationState(state)

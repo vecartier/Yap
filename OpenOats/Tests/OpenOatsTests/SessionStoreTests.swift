@@ -186,8 +186,6 @@ final class SessionStoreTests: XCTestCase {
             speaker: .you,
             text: "Hello there",
             timestamp: Date(timeIntervalSince1970: 1_000_000),
-            suggestions: ["Try asking about X"],
-            kbHits: ["doc.md"],
             refinedText: "Hello there."
         )
 
@@ -201,8 +199,6 @@ final class SessionStoreTests: XCTestCase {
 
         XCTAssertEqual(decoded.speaker, .you)
         XCTAssertEqual(decoded.text, "Hello there")
-        XCTAssertEqual(decoded.suggestions, ["Try asking about X"])
-        XCTAssertEqual(decoded.kbHits, ["doc.md"])
         XCTAssertEqual(decoded.refinedText, "Hello there.")
     }
 
@@ -223,8 +219,6 @@ final class SessionStoreTests: XCTestCase {
 
         XCTAssertEqual(decoded.speaker, .them)
         XCTAssertEqual(decoded.text, "Minimal")
-        XCTAssertNil(decoded.suggestions)
-        XCTAssertNil(decoded.kbHits)
         XCTAssertNil(decoded.refinedText)
     }
 }

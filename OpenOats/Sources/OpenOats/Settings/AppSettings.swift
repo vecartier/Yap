@@ -105,22 +105,6 @@ enum TranscriptionModel: String, CaseIterable, Identifiable {
     }
 }
 
-enum EmbeddingProvider: String, CaseIterable, Identifiable {
-    case voyageAI
-    case ollama
-    case openAICompatible
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .voyageAI: "Voyage AI"
-        case .ollama: "Ollama"
-        case .openAICompatible: "OpenAI Compatible"
-        }
-    }
-}
-
 struct AppSecretStore: Sendable {
     let loadValue: @Sendable (String) -> String?
     let saveValue: @Sendable (String, String) -> Void
@@ -172,17 +156,6 @@ final class AppSettings {
     // SwiftUI can evaluate view bodies outside a MainActor executor context in
     // Swift 6.2. Use nonisolated backing storage plus manual observation
     // tracking so bound settings remain safe to read during those updates.
-    @ObservationIgnored nonisolated(unsafe) private var _kbFolderPath: String
-    var kbFolderPath: String {
-        get { access(keyPath: \.kbFolderPath); return _kbFolderPath }
-        set {
-            withMutation(keyPath: \.kbFolderPath) {
-                _kbFolderPath = newValue
-                defaults.set(newValue, forKey: "kbFolderPath")
-            }
-        }
-    }
-
     @ObservationIgnored nonisolated(unsafe) private var _notesFolderPath: String
     var notesFolderPath: String {
         get { access(keyPath: \.notesFolderPath); return _notesFolderPath }
@@ -261,17 +234,6 @@ final class AppSettings {
         }
     }
 
-    @ObservationIgnored nonisolated(unsafe) private var _voyageApiKey: String
-    var voyageApiKey: String {
-        get { access(keyPath: \.voyageApiKey); return _voyageApiKey }
-        set {
-            withMutation(keyPath: \.voyageApiKey) {
-                _voyageApiKey = newValue
-                secretStore.save(key: "voyageApiKey", value: newValue)
-            }
-        }
-    }
-
     @ObservationIgnored nonisolated(unsafe) private var _llmProvider: LLMProvider
     var llmProvider: LLMProvider {
         get { access(keyPath: \.llmProvider); return _llmProvider }
@@ -279,17 +241,6 @@ final class AppSettings {
             withMutation(keyPath: \.llmProvider) {
                 _llmProvider = newValue
                 defaults.set(newValue.rawValue, forKey: "llmProvider")
-            }
-        }
-    }
-
-    @ObservationIgnored nonisolated(unsafe) private var _embeddingProvider: EmbeddingProvider
-    var embeddingProvider: EmbeddingProvider {
-        get { access(keyPath: \.embeddingProvider); return _embeddingProvider }
-        set {
-            withMutation(keyPath: \.embeddingProvider) {
-                _embeddingProvider = newValue
-                defaults.set(newValue.rawValue, forKey: "embeddingProvider")
             }
         }
     }
@@ -312,17 +263,6 @@ final class AppSettings {
             withMutation(keyPath: \.ollamaLLMModel) {
                 _ollamaLLMModel = newValue
                 defaults.set(newValue, forKey: "ollamaLLMModel")
-            }
-        }
-    }
-
-    @ObservationIgnored nonisolated(unsafe) private var _ollamaEmbedModel: String
-    var ollamaEmbedModel: String {
-        get { access(keyPath: \.ollamaEmbedModel); return _ollamaEmbedModel }
-        set {
-            withMutation(keyPath: \.ollamaEmbedModel) {
-                _ollamaEmbedModel = newValue
-                defaults.set(newValue, forKey: "ollamaEmbedModel")
             }
         }
     }
@@ -378,39 +318,6 @@ final class AppSettings {
             withMutation(keyPath: \.openAILLMModel) {
                 _openAILLMModel = newValue
                 defaults.set(newValue, forKey: "openAILLMModel")
-            }
-        }
-    }
-
-    @ObservationIgnored nonisolated(unsafe) private var _openAIEmbedBaseURL: String
-    var openAIEmbedBaseURL: String {
-        get { access(keyPath: \.openAIEmbedBaseURL); return _openAIEmbedBaseURL }
-        set {
-            withMutation(keyPath: \.openAIEmbedBaseURL) {
-                _openAIEmbedBaseURL = newValue
-                defaults.set(newValue, forKey: "openAIEmbedBaseURL")
-            }
-        }
-    }
-
-    @ObservationIgnored nonisolated(unsafe) private var _openAIEmbedApiKey: String
-    var openAIEmbedApiKey: String {
-        get { access(keyPath: \.openAIEmbedApiKey); return _openAIEmbedApiKey }
-        set {
-            withMutation(keyPath: \.openAIEmbedApiKey) {
-                _openAIEmbedApiKey = newValue
-                secretStore.save(key: "openAIEmbedApiKey", value: newValue)
-            }
-        }
-    }
-
-    @ObservationIgnored nonisolated(unsafe) private var _openAIEmbedModel: String
-    var openAIEmbedModel: String {
-        get { access(keyPath: \.openAIEmbedModel); return _openAIEmbedModel }
-        set {
-            withMutation(keyPath: \.openAIEmbedModel) {
-                _openAIEmbedModel = newValue
-                defaults.set(newValue, forKey: "openAIEmbedModel")
             }
         }
     }
@@ -574,9 +481,8 @@ final class AppSettings {
             Self.migrateFromOldBundleIfNeeded(defaults: defaults)
             Self.migrateFromOpenGranolaIfNeeded(defaults: defaults)
             Self.migrateKeychainServiceIfNeeded(defaults: defaults)
+            Self.removeStaleKBKeychainEntriesIfNeeded(defaults: defaults, secretStore: storage.secretStore)
         }
-
-        self._kbFolderPath = defaults.string(forKey: "kbFolderPath") ?? ""
 
         let defaultNotesPath = storage.defaultNotesDirectory.path
         self._notesFolderPath = defaults.string(forKey: "notesFolderPath") ?? defaultNotesPath
@@ -588,20 +494,14 @@ final class AppSettings {
         ) ?? .parakeetV2
         self._inputDeviceID = AudioDeviceID(defaults.integer(forKey: "inputDeviceID"))
         self._openRouterApiKey = secretStore.load(key: "openRouterApiKey") ?? ""
-        self._voyageApiKey = secretStore.load(key: "voyageApiKey") ?? ""
         self._llmProvider = LLMProvider(rawValue: defaults.string(forKey: "llmProvider") ?? "") ?? .openRouter
-        self._embeddingProvider = EmbeddingProvider(rawValue: defaults.string(forKey: "embeddingProvider") ?? "") ?? .voyageAI
         self._ollamaBaseURL = defaults.string(forKey: "ollamaBaseURL") ?? "http://localhost:11434"
         self._ollamaLLMModel = defaults.string(forKey: "ollamaLLMModel") ?? "qwen3:8b"
-        self._ollamaEmbedModel = defaults.string(forKey: "ollamaEmbedModel") ?? "nomic-embed-text"
         self._mlxBaseURL = defaults.string(forKey: "mlxBaseURL") ?? "http://localhost:8080"
         self._mlxModel = defaults.string(forKey: "mlxModel") ?? "mlx-community/Llama-3.2-3B-Instruct-4bit"
         self._openAILLMBaseURL = defaults.string(forKey: "openAILLMBaseURL") ?? "http://localhost:4000"
         self._openAILLMApiKey = secretStore.load(key: "openAILLMApiKey") ?? ""
         self._openAILLMModel = defaults.string(forKey: "openAILLMModel") ?? ""
-        self._openAIEmbedBaseURL = defaults.string(forKey: "openAIEmbedBaseURL") ?? "http://localhost:8080"
-        self._openAIEmbedApiKey = secretStore.load(key: "openAIEmbedApiKey") ?? ""
-        self._openAIEmbedModel = defaults.string(forKey: "openAIEmbedModel") ?? "text-embedding-3-small"
         self._hasAcknowledgedRecordingConsent = defaults.bool(forKey: "hasAcknowledgedRecordingConsent")
         self._saveAudioRecording = defaults.bool(forKey: "saveAudioRecording")
         self._enableTranscriptRefinement = defaults.bool(forKey: "enableTranscriptRefinement")
@@ -669,9 +569,9 @@ final class AppSettings {
         guard let oldDefaults = UserDefaults(suiteName: "com.onthespot.app") else { return }
 
         let keysToMigrate = [
-            "kbFolderPath", "selectedModel", "transcriptionLocale", "transcriptionModel", "inputDeviceID",
-            "llmProvider", "embeddingProvider", "ollamaBaseURL", "ollamaLLMModel",
-            "ollamaEmbedModel", "hideFromScreenShare",
+            "selectedModel", "transcriptionLocale", "transcriptionModel", "inputDeviceID",
+            "llmProvider", "ollamaBaseURL", "ollamaLLMModel",
+            "hideFromScreenShare",
             "isTranscriptExpanded", "hasCompletedOnboarding"
         ]
         for key in keysToMigrate {
@@ -682,7 +582,7 @@ final class AppSettings {
 
         // Migrate Keychain entries from old service
         let oldService = "com.onthespot.app"
-        let keychainKeys = ["openRouterApiKey", "voyageApiKey"]
+        let keychainKeys = ["openRouterApiKey"]
         for key in keychainKeys {
             if KeychainHelper.load(key: key) == nil,
                let oldValue = Self.loadKeychain(service: oldService, key: key) {
@@ -705,9 +605,9 @@ final class AppSettings {
         }
 
         let keysToMigrate = [
-            "kbFolderPath", "selectedModel", "transcriptionLocale", "transcriptionModel", "inputDeviceID",
-            "llmProvider", "embeddingProvider", "ollamaBaseURL", "ollamaLLMModel",
-            "ollamaEmbedModel", "hideFromScreenShare",
+            "selectedModel", "transcriptionLocale", "transcriptionModel", "inputDeviceID",
+            "llmProvider", "ollamaBaseURL", "ollamaLLMModel",
+            "hideFromScreenShare",
             "isTranscriptExpanded", "hasCompletedOnboarding",
             "hasAcknowledgedRecordingConsent"
         ]
@@ -719,7 +619,7 @@ final class AppSettings {
 
         // --- Migrate Keychain ---
         let oldService = "com.opengranola.app"
-        let keychainKeys = ["openRouterApiKey", "voyageApiKey"]
+        let keychainKeys = ["openRouterApiKey"]
         for key in keychainKeys {
             if KeychainHelper.load(key: key) == nil,
                let oldValue = Self.loadKeychain(service: oldService, key: key) {
@@ -786,10 +686,9 @@ final class AppSettings {
 
         // Migrate transcript archives: move files from ~/Documents/OpenGranola/
         // into ~/Documents/OpenOats/ so new sessions and old archives coexist.
-        // Skip if the old dir is the active KB folder or notes folder (files stay in place).
-        let activeKB = defaults.string(forKey: "kbFolderPath") ?? ""
+        // Skip if the old dir is the active notes folder (files stay in place).
         let activeNotes = defaults.string(forKey: "notesFolderPath") ?? ""
-        if fm.fileExists(atPath: oldDocDir.path) && oldDocDir.path != activeKB && oldDocDir.path != activeNotes {
+        if fm.fileExists(atPath: oldDocDir.path) && oldDocDir.path != activeNotes {
             try? fm.createDirectory(at: newDocDir, withIntermediateDirectories: true)
             if let files = try? fm.contentsOfDirectory(at: oldDocDir, includingPropertiesForKeys: nil) {
                 for file in files where file.pathExtension == "txt" {
@@ -811,12 +710,27 @@ final class AppSettings {
         defer { defaults.set(true, forKey: migrationKey) }
 
         let oldService = "com.opengranola.app"
-        let keychainKeys = ["openRouterApiKey", "voyageApiKey", "openAIEmbedApiKey", "openAILLMApiKey"]
+        let keychainKeys = ["openRouterApiKey", "openAILLMApiKey"]
         for key in keychainKeys {
             if KeychainHelper.load(key: key) == nil,
                let oldValue = loadKeychain(service: oldService, key: key) {
                 KeychainHelper.save(key: key, value: oldValue)
             }
+        }
+    }
+
+    /// Remove stale KB-related Keychain entries and UserDefaults keys left over from
+    /// the knowledge base feature that has been removed.
+    private static func removeStaleKBKeychainEntriesIfNeeded(defaults: UserDefaults, secretStore: AppSecretStore) {
+        let migrationKey = "didRemoveStaleKBKeychainEntries"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+        defer { defaults.set(true, forKey: migrationKey) }
+
+        secretStore.save(key: "voyageApiKey", value: "")
+        secretStore.save(key: "openAIEmbedApiKey", value: "")
+
+        for key in ["kbFolderPath", "embeddingProvider", "ollamaEmbedModel", "openAIEmbedBaseURL", "openAIEmbedModel"] {
+            defaults.removeObject(forKey: key)
         }
     }
 
@@ -841,11 +755,6 @@ final class AppSettings {
         for window in NSApp.windows {
             window.sharingType = type
         }
-    }
-
-    var kbFolderURL: URL? {
-        guard !kbFolderPath.isEmpty else { return nil }
-        return URL(fileURLWithPath: kbFolderPath)
     }
 
     var locale: Locale {

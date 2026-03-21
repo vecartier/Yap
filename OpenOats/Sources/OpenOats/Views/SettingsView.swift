@@ -42,33 +42,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Knowledge Base") {
-                Text("Optional. Point this to a folder of notes, docs, or reference material (.md, .txt). During meetings, OpenOats searches this folder to surface relevant context and talking points.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-
-                HStack {
-                    Text(settings.kbFolderPath.isEmpty ? "Not set" : settings.kbFolderPath)
-                        .font(.system(size: 12))
-                        .foregroundStyle(settings.kbFolderPath.isEmpty ? .tertiary : .primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    Spacer()
-
-                    if !settings.kbFolderPath.isEmpty {
-                        Button("Clear") {
-                            settings.kbFolderPath = ""
-                        }
-                        .font(.system(size: 12))
-                    }
-
-                    Button("Choose...") {
-                        chooseKBFolder()
-                    }
-                }
-            }
-
             Section("LLM Provider") {
                 Picker("Provider", selection: $settings.llmProvider) {
                     ForEach(LLMProvider.allCases) { provider in
@@ -105,38 +78,6 @@ struct SettingsView: View {
                         .font(.system(size: 12, design: .monospaced))
 
                     TextField("Model", text: $settings.openAILLMModel, prompt: Text("e.g. gpt-4o-mini"))
-                        .font(.system(size: 12, design: .monospaced))
-                }
-            }
-
-            Section("Embedding Provider") {
-                Picker("Provider", selection: $settings.embeddingProvider) {
-                    ForEach(EmbeddingProvider.allCases) { provider in
-                        Text(provider.displayName).tag(provider)
-                    }
-                }
-                .font(.system(size: 12))
-
-                switch settings.embeddingProvider {
-                case .voyageAI:
-                    SecureField("API Key", text: $settings.voyageApiKey)
-                        .font(.system(size: 12, design: .monospaced))
-                case .ollama:
-                    TextField("Embedding Model", text: $settings.ollamaEmbedModel, prompt: Text("e.g. nomic-embed-text"))
-                        .font(.system(size: 12, design: .monospaced))
-
-                    if settings.llmProvider != .ollama && settings.llmProvider != .mlx {
-                        TextField("Ollama URL", text: $settings.ollamaBaseURL, prompt: Text("http://localhost:11434"))
-                            .font(.system(size: 12, design: .monospaced))
-                    }
-                case .openAICompatible:
-                    TextField("Endpoint URL", text: $settings.openAIEmbedBaseURL, prompt: Text("http://localhost:8080"))
-                        .font(.system(size: 12, design: .monospaced))
-
-                    SecureField("API Key (optional)", text: $settings.openAIEmbedApiKey)
-                        .font(.system(size: 12, design: .monospaced))
-
-                    TextField("Model", text: $settings.openAIEmbedModel, prompt: Text("e.g. text-embedding-3-small"))
                         .font(.system(size: 12, design: .monospaced))
                 }
             }
@@ -487,18 +428,6 @@ struct SettingsView: View {
         Task { @MainActor in
             coordinator.templateStore.delete(id: id)
             templates = coordinator.templateStore.templates
-        }
-    }
-
-    private func chooseKBFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a folder containing your knowledge base documents (.md, .txt)"
-
-        if panel.runModal() == .OK, let url = panel.url {
-            settings.kbFolderPath = url.path
         }
     }
 

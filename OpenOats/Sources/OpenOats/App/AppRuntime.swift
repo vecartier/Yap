@@ -13,8 +13,6 @@ enum AppRuntimeMode {
 }
 
 struct AppServices {
-    let knowledgeBase: KnowledgeBase
-    let suggestionEngine: SuggestionEngine
     let transcriptionEngine: TranscriptionEngine
     let transcriptLogger: TranscriptLogger
     let refinementEngine: TranscriptRefinementEngine
@@ -101,8 +99,6 @@ final class AppRuntime {
             defaults.set(false, forKey: "saveAudioRecording")
             defaults.set(false, forKey: "enableTranscriptRefinement")
             defaults.set(notesDirectory.path, forKey: "notesFolderPath")
-            defaults.set("", forKey: "kbFolderPath")
-
             let storage = AppSettingsStorage(
                 defaults: defaults,
                 secretStore: .ephemeral,
@@ -134,13 +130,6 @@ final class AppRuntime {
     }
 
     func makeServices(settings: AppSettings, coordinator: AppCoordinator) -> AppServices {
-        let knowledgeBase = KnowledgeBase(settings: settings)
-        let suggestionEngine = SuggestionEngine(
-            transcriptStore: coordinator.transcriptStore,
-            knowledgeBase: knowledgeBase,
-            settings: settings
-        )
-
         let transcriptionEngine: TranscriptionEngine
         switch mode {
         case .live:
@@ -157,8 +146,6 @@ final class AppRuntime {
         }
 
         return AppServices(
-            knowledgeBase: knowledgeBase,
-            suggestionEngine: suggestionEngine,
             transcriptionEngine: transcriptionEngine,
             transcriptLogger: TranscriptLogger(directory: notesDirectory),
             refinementEngine: TranscriptRefinementEngine(
