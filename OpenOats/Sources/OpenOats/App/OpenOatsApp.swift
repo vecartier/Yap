@@ -218,7 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             guard granted == true else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "OpenOats is still running"
+            content.title = "Papyrus is still running"
             content.body = "Meeting detection is active. Click the menu bar icon to access controls."
 
             let request = UNNotificationRequest(
