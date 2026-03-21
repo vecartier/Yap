@@ -22,44 +22,15 @@ public struct OpenOatsRootApp: App {
     }
 
     public var body: some Scene {
-        Window("OpenOats", id: "main") {
-            ContentView(settings: settings)
+        Window("Papyrus", id: "main") {
+            MainAppView(settings: settings)
                 .environment(runtime)
                 .environment(coordinator)
                 .defaultAppStorage(defaults)
-                .onAppear {
-                    appDelegate.coordinator = coordinator
-                    appDelegate.settings = settings
-                    appDelegate.defaults = defaults
-                    appDelegate.runtime = runtime
-                    if case .live = runtime.mode {
-                        appDelegate.setupMenuBarIfNeeded(
-                            coordinator: coordinator,
-                            settings: settings,
-                            showMainWindow: { [self] in showMainWindow() }
-                        )
-                    }
-                    settings.applyScreenShareVisibility()
-                }
-                .onOpenURL { url in
-                    guard let command = OpenOatsDeepLink.parse(url) else { return }
-                    // Restore visibility when app is in background mode (LSUIElement)
-                    if NSApp.activationPolicy() == .accessory {
-                        NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
-                    }
-                    switch command {
-                    case .openNotes(let sessionID):
-                        coordinator.queueSessionSelection(sessionID)
-                        openNotesWindow()
-                    default:
-                        coordinator.queueExternalCommand(command)
-                    }
-                }
         }
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 320, height: 560)
+        .windowStyle(.titleBar)
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 900, height: 600)
         .commands {
             CommandGroup(after: .appInfo) {
                 if case .live = runtime.mode {
@@ -69,7 +40,7 @@ public struct OpenOatsRootApp: App {
                 }
 
                 Button("Past Meetings") {
-                    openNotesWindow()
+                    showMainWindow()
                 }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
 
@@ -80,14 +51,6 @@ public struct OpenOatsRootApp: App {
                 }
             }
         }
-
-        Window("Notes", id: "notes") {
-            NotesView(settings: settings)
-                .environment(runtime)
-                .environment(coordinator)
-                .defaultAppStorage(defaults)
-        }
-        .defaultSize(width: 700, height: 550)
 
         Settings {
             SettingsView(settings: settings, updater: updaterController.updater)
@@ -100,10 +63,6 @@ public struct OpenOatsRootApp: App {
 
 extension OpenOatsRootApp {
     static let mainWindowID = "main"
-
-    private func openNotesWindow() {
-        openWindow(id: "notes")
-    }
 
     private func showMainWindow() {
         NSApp.setActivationPolicy(.regular)
