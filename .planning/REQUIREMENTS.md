@@ -128,13 +128,45 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLEAN-01 | Phase 1 | Complete |
 | CLEAN-02 | Phase 1 | Complete |
 | CLEAN-03 | Phase 1 | Complete |
-| (remaining populated during roadmap creation) | | |
+| WIN-01 | Phase 2 | Pending |
+| WIN-02 | Phase 2 | Pending |
+| WIN-03 | Phase 2 | Pending |
+| WIN-05 | Phase 2 | Pending |
+| WIN-06 | Phase 2 | Pending |
+| WIN-07 | Phase 2 | Pending |
+| WIN-04 | Phase 3 | Pending |
+| SLCK-01 | Phase 3 | Pending |
+| SLCK-02 | Phase 3 | Pending |
+| SLCK-03 | Phase 3 | Pending |
+| LIVE-01 | Phase 4 | Pending |
+| LIVE-02 | Phase 4 | Pending |
+| LIVE-03 | Phase 4 | Pending |
+| LIVE-04 | Phase 4 | Pending |
+| MENU-01 | Phase 4 | Pending |
+| MENU-02 | Phase 4 | Pending |
+| MENU-03 | Phase 4 | Pending |
+| SUMM-01 | Phase 5 | Pending |
+| SUMM-02 | Phase 5 | Pending |
+| SUMM-03 | Phase 5 | Pending |
+| SUMM-04 | Phase 5 | Pending |
+| SUMM-05 | Phase 5 | Pending |
+| SUMM-06 | Phase 5 | Pending |
+| SUMM-07 | Phase 5 | Pending |
+| SUMM-08 | Phase 5 | Pending |
+| SUMM-09 | Phase 5 | Pending |
+| SETT-01 | Phase 5 | Pending |
+| SETT-02 | Phase 5 | Pending |
+| SRCH-01 | Phase 6 | Pending |
+| SRCH-02 | Phase 6 | Pending |
+| SRCH-03 | Phase 6 | Pending |
+| EXPRT-01 | Phase 6 | Pending |
+| EXPRT-02 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 38 total (7 complete, 31 active)
-- Mapped to phases: 7
-- Unmapped: 31 ⚠️
+- Mapped to phases: 38
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after scope reframe*
+*Last updated: 2026-03-21 — traceability populated for all 38 requirements across 6 phases*
