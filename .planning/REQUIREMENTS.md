@@ -39,8 +39,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **WIN-03**: Sidebar groups meetings by date sections (Today / Yesterday / Last 7 days / Earlier)
 - [ ] **WIN-04**: Clicking a meeting shows Granola-style unified detail: summary at top, transcript below
 - [ ] **WIN-05**: Detail pane shows meeting metadata (date, time, duration, type)
-- [ ] **WIN-06**: Main window uses singleton `Window` scene (not `WindowGroup`)
-- [ ] **WIN-07**: Activation policy flips between .accessory and .regular when showing/hiding main window
+- [x] **WIN-06**: Main window uses singleton `Window` scene (not `WindowGroup`)
+- [x] **WIN-07**: Activation policy flips between .accessory and .regular when showing/hiding main window
 
 ### Live Recording
 
@@ -132,8 +132,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WIN-02 | Phase 2 | Pending |
 | WIN-03 | Phase 2 | Pending |
 | WIN-05 | Phase 2 | Pending |
-| WIN-06 | Phase 2 | Pending |
-| WIN-07 | Phase 2 | Pending |
+| WIN-06 | Phase 2 | Complete |
+| WIN-07 | Phase 2 | Complete |
 | WIN-04 | Phase 3 | Pending |
 | SLCK-01 | Phase 3 | Pending |
 | SLCK-02 | Phase 3 | Pending |
