@@ -518,6 +518,69 @@ final class MeetingStateTests: XCTestCase {
     }
 
     // -------------------------------------------------------------------------
+    // MARK: - Solo Mode Tests (Task 1 — new)
+    // -------------------------------------------------------------------------
+
+    func testMeetingModeEnum() {
+        XCTAssertTrue(MeetingMode.call.capturesSystemAudio)
+        XCTAssertFalse(MeetingMode.soloMemo.capturesSystemAudio)
+        XCTAssertFalse(MeetingMode.soloRoom.capturesSystemAudio)
+        XCTAssertEqual(MeetingMode.call.micSpeaker, .you)
+        XCTAssertEqual(MeetingMode.soloMemo.micSpeaker, .you)
+        XCTAssertEqual(MeetingMode.soloRoom.micSpeaker, .room)
+    }
+
+    func testMeetingMetadataSoloFactory() {
+        let memo = MeetingMetadata.solo(.soloMemo)
+        XCTAssertEqual(memo.mode, .soloMemo)
+        XCTAssertNil(memo.detectionContext)
+
+        let room = MeetingMetadata.solo(.soloRoom)
+        XCTAssertEqual(room.mode, .soloRoom)
+        XCTAssertNil(room.detectionContext)
+
+        let call = MeetingMetadata.manual()
+        XCTAssertEqual(call.mode, .call)
+    }
+
+    func testSpeakerRoomCase() {
+        XCTAssertEqual(Speaker.room.rawValue, "room")
+        XCTAssertNotEqual(Speaker.room, .you)
+        XCTAssertNotEqual(Speaker.room, .them)
+    }
+
+    func testSoloMemoSessionLifecycle() {
+        let metadata = MeetingMetadata.solo(.soloMemo)
+        XCTAssertEqual(metadata.mode, .soloMemo)
+        XCTAssertFalse(metadata.mode.capturesSystemAudio)
+        XCTAssertEqual(metadata.mode.micSpeaker, .you)
+        XCTAssertNil(metadata.detectionContext)
+        XCTAssertNil(metadata.calendarEvent)
+    }
+
+    func testSoloRoomSessionLifecycle() {
+        let metadata = MeetingMetadata.solo(.soloRoom)
+        XCTAssertEqual(metadata.mode, .soloRoom)
+        XCTAssertFalse(metadata.mode.capturesSystemAudio)
+        XCTAssertEqual(metadata.mode.micSpeaker, .room)
+        XCTAssertNil(metadata.detectionContext)
+        XCTAssertNil(metadata.calendarEvent)
+    }
+
+    func testSoloModeSpeakerLabels() {
+        // Solo memo: mic utterances labeled "You"
+        XCTAssertEqual(MeetingMode.soloMemo.micSpeaker, .you)
+        XCTAssertEqual(MeetingMode.soloMemo.micSpeaker.rawValue, "you")
+
+        // Solo room: mic utterances labeled "Room"
+        XCTAssertEqual(MeetingMode.soloRoom.micSpeaker, .room)
+        XCTAssertEqual(MeetingMode.soloRoom.micSpeaker.rawValue, "room")
+
+        // Call mode: mic utterances still labeled "You"
+        XCTAssertEqual(MeetingMode.call.micSpeaker, .you)
+    }
+
+    // -------------------------------------------------------------------------
     // MARK: - MeetingAppEntry Tests
     // -------------------------------------------------------------------------
 

@@ -58,6 +58,28 @@ struct Participant: Sendable, Hashable, Codable {
     let email: String?
 }
 
+// MARK: - Meeting Mode
+
+/// Determines which audio streams are captured and how speakers are labeled.
+enum MeetingMode: String, Sendable, Codable, Equatable {
+    case call       // mic + system audio; "You" + "Them" speakers
+    case soloMemo   // mic only; "You" speaker — personal voice memo
+    case soloRoom   // mic only; "Room" speaker — in-person meeting via laptop mic
+
+    /// True only for .call mode where system audio capture is needed.
+    var capturesSystemAudio: Bool {
+        self == .call
+    }
+
+    /// The Speaker label to apply to mic-transcribed utterances.
+    var micSpeaker: Speaker {
+        switch self {
+        case .call, .soloMemo: return .you
+        case .soloRoom: return .room
+        }
+    }
+}
+
 // MARK: - Meeting Metadata
 
 /// Metadata assembled during a meeting session (detection context + calendar info).
@@ -67,6 +89,7 @@ struct MeetingMetadata: Sendable, Equatable, Codable {
     let title: String?
     let startedAt: Date
     var endedAt: Date?
+    var mode: MeetingMode = .call
 
     static func manual() -> MeetingMetadata {
         let now = Date()
@@ -76,7 +99,19 @@ struct MeetingMetadata: Sendable, Equatable, Codable {
                 meetingApp: nil, calendarEvent: nil
             ),
             calendarEvent: nil, title: nil,
-            startedAt: now, endedAt: nil
+            startedAt: now, endedAt: nil,
+            mode: .call
+        )
+    }
+
+    static func solo(_ mode: MeetingMode) -> MeetingMetadata {
+        MeetingMetadata(
+            detectionContext: nil,
+            calendarEvent: nil,
+            title: nil,
+            startedAt: Date(),
+            endedAt: nil,
+            mode: mode
         )
     }
 }

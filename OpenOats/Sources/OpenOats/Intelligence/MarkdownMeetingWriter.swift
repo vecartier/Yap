@@ -204,8 +204,9 @@ enum MarkdownMeetingWriter {
 
     static func speakerLabel(_ speaker: Speaker) -> String {
         switch speaker {
-        case .you: return "You"
+        case .you:  return "You"
         case .them: return "Them"
+        case .room: return "Room"
         }
     }
 

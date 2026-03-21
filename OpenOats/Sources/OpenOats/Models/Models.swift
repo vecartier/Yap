@@ -3,6 +3,7 @@ import Foundation
 enum Speaker: String, Codable, Sendable {
     case you
     case them
+    case room
 }
 
 enum RefinementStatus: String, Codable, Sendable {
