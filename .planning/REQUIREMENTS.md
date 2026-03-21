@@ -57,8 +57,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Slack Message
 
-- [ ] **SLCK-01**: Summary is formatted as a Slack-ready message (Markdown with clear sections)
-- [ ] **SLCK-02**: Slack message includes header, key decisions, action items, discussion points, open questions
+- [x] **SLCK-01**: Summary is formatted as a Slack-ready message (Markdown with clear sections)
+- [x] **SLCK-02**: Slack message includes header, key decisions, action items, discussion points, open questions
 - [ ] **SLCK-03**: Copy-to-clipboard button for Slack message in meeting detail pane
 
 ### Search
@@ -135,8 +135,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WIN-06 | Phase 2 | Complete |
 | WIN-07 | Phase 2 | Complete |
 | WIN-04 | Phase 3 | Pending |
-| SLCK-01 | Phase 3 | Pending |
-| SLCK-02 | Phase 3 | Pending |
+| SLCK-01 | Phase 3 | Complete |
+| SLCK-02 | Phase 3 | Complete |
 | SLCK-03 | Phase 3 | Pending |
 | LIVE-01 | Phase 4 | Pending |
 | LIVE-02 | Phase 4 | Pending |
