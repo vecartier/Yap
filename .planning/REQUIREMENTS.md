@@ -34,11 +34,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Main App Window
 
-- [ ] **WIN-01**: App has a main window with NavigationSplitView (sidebar + detail layout)
-- [ ] **WIN-02**: Sidebar shows chronological meeting list with date, title, duration, meeting type
-- [ ] **WIN-03**: Sidebar groups meetings by date sections (Today / Yesterday / Last 7 days / Earlier)
+- [x] **WIN-01**: App has a main window with NavigationSplitView (sidebar + detail layout)
+- [x] **WIN-02**: Sidebar shows chronological meeting list with date, title, duration, meeting type
+- [x] **WIN-03**: Sidebar groups meetings by date sections (Today / Yesterday / Last 7 days / Earlier)
 - [ ] **WIN-04**: Clicking a meeting shows Granola-style unified detail: summary at top, transcript below
-- [ ] **WIN-05**: Detail pane shows meeting metadata (date, time, duration, type)
+- [x] **WIN-05**: Detail pane shows meeting metadata (date, time, duration, type)
 - [x] **WIN-06**: Main window uses singleton `Window` scene (not `WindowGroup`)
 - [x] **WIN-07**: Activation policy flips between .accessory and .regular when showing/hiding main window
 
@@ -128,10 +128,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLEAN-01 | Phase 1 | Complete |
 | CLEAN-02 | Phase 1 | Complete |
 | CLEAN-03 | Phase 1 | Complete |
-| WIN-01 | Phase 2 | Pending |
-| WIN-02 | Phase 2 | Pending |
-| WIN-03 | Phase 2 | Pending |
-| WIN-05 | Phase 2 | Pending |
+| WIN-01 | Phase 2 | Complete |
+| WIN-02 | Phase 2 | Complete |
+| WIN-03 | Phase 2 | Complete |
+| WIN-05 | Phase 2 | Complete |
 | WIN-06 | Phase 2 | Complete |
 | WIN-07 | Phase 2 | Complete |
 | WIN-04 | Phase 3 | Pending |

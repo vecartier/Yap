@@ -13,7 +13,7 @@ Transforms OpenOats from a menu-bar recording utility into a full Granola-style 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Solo mode, KB removal, three-button menu bar (complete 2026-03-21)
-- [ ] **Phase 2: Window Scaffold** - NavigationSplitView main window with sidebar meeting list
+- [x] **Phase 2: Window Scaffold** - NavigationSplitView main window with sidebar meeting list (complete 2026-03-21)
 - [ ] **Phase 3: Past Meeting Detail** - Unified detail pane with transcript, metadata, and Slack copy
 - [ ] **Phase 4: Live Recording + Menu Bar Cleanup** - Live transcript in main window, stripped menu bar popover, legacy views deleted
 - [ ] **Phase 5: Summary Engine + Settings** - Auto-generated structured summaries, settings as sidebar tab
@@ -50,8 +50,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — App rename to Papyrus + MainAppView window scene (WIN-06, WIN-07)
-- [ ] 02-02-PLAN.md — MeetingSidebarView date grouping + DetailRouter placeholder (WIN-01, WIN-02, WIN-03, WIN-05)
+- [x] 02-01-PLAN.md — App rename to Papyrus + MainAppView window scene (WIN-06, WIN-07)
+- [x] 02-02-PLAN.md — MeetingSidebarView date grouping + DetailRouter placeholder (WIN-01, WIN-02, WIN-03, WIN-05)
 
 ---
 
@@ -129,7 +129,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete | 2026-03-21 |
-| 2. Window Scaffold | 1/2 | In Progress|  |
+| 2. Window Scaffold | 2/2 | Complete | 2026-03-21 |
 | 3. Past Meeting Detail | 0/2 | Not started | - |
 | 4. Live Recording + Menu Bar Cleanup | 0/2 | Not started | - |
 | 5. Summary Engine + Settings | 0/2 | Not started | - |
