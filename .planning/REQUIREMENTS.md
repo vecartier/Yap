@@ -88,13 +88,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated during roadmap creation) | | |
+| SOLO-01 | Phase 1 | Pending |
+| SOLO-02 | Phase 1 | Pending |
+| SOLO-03 | Phase 1 | Pending |
+| SOLO-04 | Phase 1 | Pending |
+| CLEAN-01 | Phase 1 | Pending |
+| CLEAN-02 | Phase 1 | Pending |
+| CLEAN-03 | Phase 1 | Pending |
+| SUMM-01 | Phase 2 | Pending |
+| SUMM-02 | Phase 2 | Pending |
+| SUMM-03 | Phase 2 | Pending |
+| SUMM-04 | Phase 2 | Pending |
+| SUMM-05 | Phase 2 | Pending |
+| SUMM-06 | Phase 2 | Pending |
+| SUMM-07 | Phase 2 | Pending |
+| SUMM-08 | Phase 2 | Pending |
+| SUMM-09 | Phase 2 | Pending |
+| SLCK-01 | Phase 3 | Pending |
+| SLCK-02 | Phase 3 | Pending |
+| SLCK-03 | Phase 3 | Pending |
+| SHARE-01 | Phase 3 | Pending |
+| SHARE-02 | Phase 3 | Pending |
+| SHARE-03 | Phase 3 | Pending |
+| SHARE-04 | Phase 3 | Pending |
+| SHARE-05 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- v1 requirements: 24 total
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after initial definition*
+*Last updated: 2026-03-21 after roadmap creation*
