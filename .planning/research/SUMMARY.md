@@ -1,182 +1,202 @@
 # Project Research Summary
 
-**Project:** OpenOats fork — MeetingScribe (auto-summary + Slack integration milestone)
-**Domain:** macOS meeting transcription — structured summary generation, solo mode, Slack sharing
+**Project:** OpenOats Fork — MeetingScribe main app window milestone
+**Domain:** macOS meeting companion — main window, meeting history, search, PDF export, settings
 **Researched:** 2026-03-21
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone extends an already-functional Swift 6.2 / macOS 15+ meeting transcription app with three capabilities: solo/mic-only recording mode, automatic structured summary generation on session end, and Slack delivery via incoming webhooks. The existing codebase provides strong foundations — `OpenRouterClient` for LLM calls, `AppCoordinator` for session lifecycle, `MicCapture` for audio, and Keychain-backed `AppSettings` — meaning no new Swift Package dependencies are required. All new capabilities build entirely on Foundation, AppKit, and SwiftUI already in the project.
+This milestone transforms OpenOats from a menu-bar-only recording utility into a full macOS companion app with a Granola-style main window. The app already has a solid foundation — Swift 6.2, WhisperKit transcription, an `AppCoordinator` observable, file-based session storage (JSONL + plain text), and `OpenRouterClient` for LLM summaries. The milestone builds entirely on these existing primitives. No new Swift Package Manager dependencies are required; every new capability (NavigationSplitView, NSPrintOperation PDF export, in-memory search) is available in Apple's existing built-in frameworks. The architectural change is primarily additive: new SwiftUI views replace two existing views (`ContentView`, `NotesView`) and consolidate into a single `Window` scene with a `NavigationSplitView` root.
 
-The recommended approach is a strict three-phase build order derived from hard architectural dependencies: (1) solo mode and knowledge-base removal first to clear the codebase of dead code and establish correct audio engine initialization patterns; (2) `SummaryEngine` second, hooked into `AppCoordinator.finalizeCurrentSession()` with a two-phase structured JSON prompt to minimize hallucination; (3) Slack integration and the post-meeting share UI last, built on top of the summary output. This order is non-negotiable — the share screen has no value without a summary, and the summary pipeline must be designed before the share UI is wired or the finalization race condition will be baked in.
+The recommended approach mirrors how Granola is built: a single-window app with a sidebar meeting list (date-grouped, chronological), a detail pane that switches between a live transcript view during recording and a summary-then-transcript view for completed sessions, and settings embedded as a sidebar tab rather than a separate Preferences window. Competitive analysis confirms this is the best UX pattern for the category. Granola's one clear differentiator gap — no in-transcript keyword search (users must query the AI chatbot instead) — is a concrete feature advantage the fork can claim immediately with a Cmd+F inline search.
 
-The two highest risks are both implementation traps rather than architectural unknowns. First, Slack incoming webhooks are channel-locked — the "channel picker" in PROJECT.md must be re-scoped to a "webhook picker" where users configure named webhook entries rather than selecting from a dynamic channel list. Second, the existing `NotesEngine` 60K-character truncation strategy silently discards the middle portion of long meetings; a new `SummaryEngine` must use token-aware chunking with explicit user notification rather than reusing the existing truncation unchanged. Both pitfalls are well-documented and entirely avoidable if addressed at the design phase of each respective feature.
+The primary risks are macOS-specific integration subtleties rather than architectural complexity. Three issues will kill the experience if unaddressed from day one: using `WindowGroup` instead of `Window` (spawns multiple windows), failing to activate the app before showing the window (window appears behind other apps), and using `ImageRenderer` for PDF export (clips to a single page). All three have documented solutions and must be locked in during the first implementation phase — they cannot be retrofitted cheaply.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The milestone requires zero new Swift Package Manager dependencies. All needed capabilities — HTTP (URLSession), JSON (Codable/JSONEncoder), clipboard (NSPasteboard), and UI state (SwiftUI @Observable) — are already present in the project or the OS. The existing `OpenRouterClient.complete()` non-streaming path is extended to support `response_format: json_schema` for structured output; Ollama requires a different top-level `format` field due to a documented incompatibility with the OpenAI structured-output syntax (GitHub issue #10001). Slack webhooks are plain `POST application/json` to a `hooks.slack.com` URL — no Slack SDK is needed or appropriate.
+The entire milestone uses frameworks already linked into the project. `NavigationSplitView` (SwiftUI, macOS 13+) replaces the manual `HStack(sidebar + Divider() + detail)` in `NotesView` and delivers sidebar toggle, correct resize behavior, and system selection highlight for free. Full-text search uses `String.localizedStandardContains` scanning an in-memory `[SessionIndex]` array — no database, no search index, no new infrastructure — sufficient for hundreds of sessions. PDF export uses `NSPrintOperation.pdfOperation(with:inside:to:)` with an off-screen `NSTextView` and `NSAttributedString` composition; this handles multi-page pagination automatically and is the canonical macOS approach. All search file I/O must run on a background `Task` with a 250ms debounce.
 
 **Core technologies:**
-- URLSession (Foundation, built-in): Slack webhook HTTP POST — already used in `OpenRouterClient`, zero new dependencies
-- Swift Codable + JSONEncoder (built-in): Slack Block Kit payload construction — same pattern as `ChatRequest`
-- `OpenRouterClient.complete()` (existing): Non-streaming structured JSON summary generation — extend with optional `response_format` field
-- SwiftUI `@Observable` (built-in): Share screen state management — consistent with existing `NotesEngine` and `AppCoordinator` patterns
-- macOS `NSPasteboard` (AppKit, built-in): Copy-to-clipboard fallback — zero-config sharing path
-
-**Critical version note:** Ollama structured output requires `format` at top-level in the request body (not nested in `response_format`). Detect provider at runtime and branch accordingly; fall back to `extractLLMSections()` markdown parsing on JSON decode failure.
+- `NavigationSplitView` (SwiftUI built-in): two-column sidebar + detail layout — replaces manual HStack, delivers system chrome for free
+- `Window` scene (SwiftUI built-in): single-instance main window — mandatory over `WindowGroup` to prevent duplicate window spawning
+- `String.localizedStandardContains` (Foundation built-in): case-insensitive in-memory search — sufficient for personal-tool scale without any database
+- `NSPrintOperation.pdfOperation` + `NSTextView` (AppKit built-in): multi-page PDF export — the only correct path for text-heavy paginated documents on macOS
+- `NSSavePanel` (AppKit built-in): save dialog for PDF export — use `UTType.pdf`, not the deprecated `allowedFileTypes` NSString API
+- `ContentUnavailableView` (SwiftUI, macOS 14+): empty states for no meetings and no search results
+- `@SceneStorage` (SwiftUI built-in): persist sidebar column visibility across launches
 
 ### Expected Features
 
-Structured summaries (key decisions, action items, discussion points, open questions) and readable Slack formatting are table stakes — every major competitor delivers these and users will consider their absence a product defect. Solo/mic-only mode is equally expected for any tool that claims to handle in-person meetings. The post-meeting review screen before sending is a deliberate UX differentiator — all major competitors (Fireflies, Fathom, Otter) auto-fire to Slack; the review step is the primary trust-building mechanism.
+The competitor landscape (Granola, Otter, Fathom, Fireflies) defines what users consider table stakes for a meeting notes app. The gap analysis confirms one clear differentiator: inline transcript keyword search, which Granola explicitly lacks (users must use the AI chatbot as a workaround).
 
-**Must have (table stakes):**
-- Structured summary with 4 sections (decisions, action items, discussion points, open questions) — baseline user expectation
-- Action items with owners extracted from transcript context — distinguishes "useful" from "vague"
-- Copy-to-clipboard export — zero-config fallback for users without a webhook
-- Immediate summary availability after session end — delays erode trust
-- Readable Slack Block Kit formatting — header + section blocks, not a text wall
-- Solo mode (mic-only, manual start) — unlocks in-person use and voice memos
-- Strip knowledge base UI and code — PROJECT.md direction, removes dead weight
+**Must have (table stakes — P1):**
+- Sidebar meeting list with date-grouped sections ("Today / Yesterday / Last 7 days / Earlier") — users expect Apple Notes-style grouping
+- Detail pane: summary at top, full transcript below (Granola-style unified view, no tabs)
+- Live transcript in detail pane during active recording (not the menu bar popover)
+- Full-text search filtering the sidebar list — primary use case: "when did we discuss X?"
+- Rename meeting — all major competitors support editable titles
+- Slack-formatted copy button in detail pane toolbar
+- Settings as a tab in the sidebar (not a separate Preferences window)
+- Empty state with `ContentUnavailableView` on first launch
+- Meeting type badge in sidebar row (Zoom / Teams / Meet / Solo / Room)
 
-**Should have (competitive advantage):**
-- Post-meeting review screen before any sharing action — deliberate differentiator vs. auto-fire competitors
-- Webhook-based Slack with no OAuth/admin approval — self-service setup is the key friction win
-- Local LLM support (Ollama) for privacy-sensitive meetings — no competitor offers this
-- Recurring meeting webhook memory (auto-populate last-used webhook) — removes the top friction point in post-meeting sharing
-- Meeting type context in summary prompt — standup vs. client call vs. planning have different useful structures
+**Should have (competitive differentiators — P2, add after core layout is validated):**
+- PDF export (transcript + summary) — Granola has no PDF export; this is a concrete gap to fill
+- Inline transcript Cmd+F search with highlights — explicit differentiator vs Granola
+- "Currently recording" pinned live entry at top of sidebar
+- Global keyboard shortcut to open main window
 
 **Defer (v2+):**
-- Summary template customization — only if users find 4 default sections insufficient
-- Multiple Slack workspace profiles — complexity not justified for a personal tool
-- Summary search across sessions — defer until history usage patterns are understood
+- Tags / folder organization — full-text search covers 95% of retrieval needs at personal scale
+- AI chat per meeting — structured summary already answers key questions; chat adds marginal value
+- Audio playback with transcript seek — significant storage and AV complexity
+- Calendar integration for participant names — requires a separate calendar permissions milestone
 
 ### Architecture Approach
 
-The new components fit cleanly into the existing layered architecture without restructuring it. A new `SummaryEngine` actor (sibling to `NotesEngine`) handles structured LLM summarization. A new `SlackService` actor and `SlackFormatter` handle Block Kit payload construction and webhook delivery. A `ChannelStore` actor persists named webhook configurations. A new `PostMeetingShareUI` window (not a popover — needs screen space) presents the summary and wires all sharing actions. `AppCoordinator` is extended at two points: `startSession()` gets a `MeetingMode` enum to control audio engine initialization, and `finalizeCurrentSession()` gets a summary generation hook after transcript finalization completes.
+The architecture follows a strict consolidation pattern: merge the existing two-window design (`Window("main")` for recording controls + `Window("notes")` for history) into one `Window("main")` scene containing a `NavigationSplitView`. The critical design decision is that the detail pane has two mutually exclusive states — live (during recording) and past (completed session) — which must be separated into distinct views (`LiveDetailView`, `PastMeetingDetailView`) with a `DetailRouter` as the single branching point. This prevents live recording state from polluting the disk-loaded session state that `PastMeetingDetailView` manages. `AppCoordinator` requires no new state; `sessionHistory`, `isRecording`, and `lastEndedSession` already exist and are sufficient.
 
 **Major components:**
-1. `SummaryEngine` (new actor) — structured LLM summarization; two-phase grounding+formatting prompt; triggered from `AppCoordinator.finalizeCurrentSession()` after transcript drain
-2. `SlackService` + `SlackFormatter` (new, `Slack/` directory) — Block Kit payload construction with per-block 3K-char enforcement; webhook POST via URLSession
-3. `PostMeetingShareUI` (new NSWindow/NSPanel) — summary review, webhook picker, send/copy/save actions; driven by `@Observable` summary state on `AppCoordinator`
-4. `ChannelStore` (new actor) — named webhook configurations (label + Keychain URL); last-used-per-meeting-app memory in UserDefaults
-5. `MeetingMode` enum (new, in `AppCoordinator`) — `.call` vs `.solo`; controls whether `SystemAudioCapture` is initialized at session start
+1. `MainAppView` — `NavigationSplitView` root; owns `selectedSessionID: @State` and `columnVisibility: @SceneStorage`
+2. `MeetingSidebarView` — chronological meeting list with live session row pinned at top during recording; uses `MeetingListItem` enum (`.live` + `.session(SessionIndex)`)
+3. `DetailRouter` — reads `coordinator.isRecording` + `selectedSessionID` to select between `LiveDetailView`, `PastMeetingDetailView`, and empty state; single source of truth for detail pane content
+4. `LiveDetailView` — live transcript during recording; ports existing `ContentView` logic
+5. `PastMeetingDetailView` — summary (Markdown rendered) + full transcript + Slack copy button; replaces `NotesView`
+6. `AppCoordinator` (unchanged) — environment-injected into all views; no new properties needed
 
 ### Critical Pitfalls
 
-1. **Webhook is channel-locked, not channel-selectable** — The PROJECT.md "channel picker" is impossible with a single webhook URL; re-scope to a "webhook picker" where users configure named `(label, URL)` pairs in Settings. Address in the Settings/Slack integration phase before designing the share UI data model.
+1. **`WindowGroup` spawns multiple windows** — use `Window` (not `WindowGroup`) for the main window scene from day one; retroactively fixing this requires surgery on the scene management layer
 
-2. **Transcript truncation silently discards the meeting middle** — The existing `NotesEngine` 60K-char strategy keeps first and last 1/3, discarding the middle 1/3. Do not reuse this in `SummaryEngine`; implement token-aware chunking with explicit user notification for long meetings. Address in the summary generation phase when designing the transcript-to-prompt pipeline.
+2. **Window appears behind other apps after activation policy flip** — always call `NSApp.setActivationPolicy(.regular)` then `NSApp.activate(ignoringOtherApps: true)` then `window.makeKeyAndOrderFront(nil)` in sequence; the existing `showMainWindow()` function already does this correctly — wire to it, do not reimplement
 
-3. **LLM hallucination of action items** — Single-pass prompts generate "helpful-sounding" action items with fabricated owners and deadlines. Use a two-phase prompt: grounding pass (quote exact transcript evidence) then formatting pass. Chain two `OpenRouterClient.complete()` calls. Address in the summary generation phase before implementing `SummaryEngine.generate()`.
+3. **`ImageRenderer` clips PDF to one page** — use `NSPrintOperation.pdfOperation` + `NSTextView` instead; `ImageRenderer` is prominently documented but fundamentally broken for multi-page text export; `WKWebView.createPDF` is an acceptable alternative
 
-4. **Solo mode breaks session lifecycle silently** — Adding a `skipSystemAudio: Bool` flag to the existing `TranscriptionEngine` leaves `AudioHardwareCreateProcessTap()` running; use a factory method or separate initialization path controlled by `MeetingMode` enum instead. Address in the solo mode phase before wiring the menu bar toggle.
+4. **Full-text search freezes the main thread** — all file I/O in the search path must run on a background `Task` with a 250ms debounce; search title/metadata only in v1; load transcript content lazily on demand
 
-5. **Webhook URLs stored in UserDefaults (secret leak)** — Webhook URLs are effectively secrets and must go in Keychain (same pattern as the OpenRouter API key in `AppSettings.swift`), not `@AppStorage` or `UserDefaults`. Address in the Slack integration phase before any share UI is wired.
+5. **`NavigationSplitView` selection binding missing** — the `selection:` parameter on `List` must be wired explicitly; without it the sidebar shows no selection highlight on macOS (looks broken) even though navigation works
 
-6. **Share screen shown before transcript finalization completes** — Triggering summary generation from `onChange(of: coordinator.lastEndedSession)` in the UI creates a race; trigger from within `finalizeCurrentSession()` after `sessionStore.awaitPendingWrites()`. Address in the summary generation phase when designing the `AppCoordinator` hook point.
+6. **Live transcript updates congest `@MainActor`** — batch utterance updates; do not call `scrollTo` on every utterance; scroll only when the latest utterance ID changes
 
-7. **Slack Block Kit 3K-char-per-block limit silently truncates** — HTTP 200 response does not confirm full message display; use one section block per summary category with explicit 3K-char enforcement and truncation with a "see full transcript" note. Address in the Slack formatting phase.
+7. **`.prominentDetail` is a silent no-op on macOS** — use `columnVisibility = .detailOnly` to collapse the sidebar programmatically; `.prominentDetail` is iOS/iPadOS-only and silently degrades on macOS
+
+---
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on the combined research, the architecture's explicit build-order dependency chain maps directly to 6 phases. Each phase produces a shippable, testable increment. This ordering eliminates the most expensive integration risks first before higher-level features are layered on.
 
-### Phase 1: Foundation — Solo Mode + Knowledge Base Removal
+### Phase 1: Window Scaffold
 
-**Rationale:** Solo mode has no upstream dependencies and establishes the `MeetingMode` enum and audio engine initialization pattern that later phases reference. Knowledge base removal clears dead code before new features are added, reducing noise during implementation. Both are low-complexity, high-confidence tasks.
+**Rationale:** All subsequent work lives inside the `NavigationSplitView` layout. Three of the 7 critical pitfalls (WindowGroup, window focus, selection binding) must be addressed here — they cannot be deferred without invalidating work built on top. Choosing the wrong scene type now means multi-window surgery later.
+**Delivers:** `Window("main")` with `NavigationSplitView`, sidebar list populated from existing `coordinator.sessionHistory`, empty state in detail pane, correct window lifecycle (activation policy, singleton enforcement, `showMainWindow()` wired to menu bar).
+**Addresses:** Sidebar meeting list (date-grouped), empty state, meeting type badge in rows (all P1 features).
+**Avoids:** Pitfall 1 (WindowGroup), Pitfall 2 (window focus/activation), Pitfall 3 (selection binding), Pitfall 7 (prominentDetail).
 
-**Delivers:** Mic-only recording mode accessible from menu bar; clean codebase with KB surface area removed; `MeetingMode` enum pattern established for Phases 2+
+### Phase 2: Past Meeting Detail (Read-Only)
 
-**Addresses features:** Solo mode (mic-only, manual start); strip knowledge base UI and code (P1 from FEATURES.md)
+**Rationale:** The detail pane is the core value surface. Building the static (past meeting) view first establishes the async data loading pattern (`SessionStore` load) and the Granola-style summary-then-transcript layout without the complexity of real-time updates. The summary section must handle graceful empty state (no `.md` file yet) before the `SummaryEngine` is built.
+**Delivers:** `PastMeetingDetailView` with metadata header, summary section (graceful "not yet generated" state if no `.md` file), full transcript, Slack copy button. `DetailRouter` wired for past sessions and empty state.
+**Uses:** `SessionStore` JSONL + `TranscriptLogger` plain text files (both existing); lazy load per selection.
+**Avoids:** Loading all transcripts at launch; detail pane crashing on missing summary files.
 
-**Avoids pitfalls:** Pitfall 4 (solo mode session lifecycle) — `MeetingMode` enum with factory-method initialization must be established here, not patched later
+### Phase 3: Live Recording Flow
 
-**Research flag:** Standard patterns — solo mode follows existing `MicCapture` path and `AppCoordinator` session start. No additional research phase needed.
+**Rationale:** Once the past-meeting detail pane is solid, the live view follows naturally — both share `DetailRouter`. This is where Pitfall 4 (live transcript main-thread congestion) must be addressed. Keeping `LiveDetailView` separate from `PastMeetingDetailView` is the key design discipline; the existing codebase already separates these concerns (`ContentView` vs `NotesView`) and the milestone must preserve that separation in the new architecture.
+**Delivers:** `LiveDetailView` (ports existing `ContentView` logic), `MeetingListItem` enum with `.live` synthetic row pinned at top, auto-navigation to completed session on recording stop.
+**Avoids:** Pitfall 4 (live transcript main thread congestion); Anti-Pattern 1 (embedding live state in the past-meeting view).
 
-### Phase 2: Summary Engine
+### Phase 4: MenuBar Cleanup + Legacy View Removal
 
-**Rationale:** The summary is the core value delivery of this milestone and is a hard upstream dependency for the share screen. It must be designed before the share UI is built or finalization-race and prompt-architecture decisions get locked in by UI assumptions. This phase also requires the most careful design work (two-phase prompting, transcript chunking, provider-specific structured output branching).
+**Rationale:** With both detail views working, the old `ContentView.swift` and `NotesView.swift` can be safely deleted. The `MenuBarPopoverView` shrinks to status + stop + "Open MeetingScribe" link only. Deleting dead code at this checkpoint prevents it from confusing later phases and keeps the diff clean.
+**Delivers:** Stripped menu bar popover; `ContentView.swift` and `NotesView.swift` deleted; `Window("notes")` scene removed from `OpenOatsApp.swift`.
+**Avoids:** Anti-Pattern 3 (keeping `Window("notes")` alongside the new main window, creating two overlapping history surfaces).
 
-**Delivers:** `MeetingSummary` struct generated on every session end; typed output (decisions, action items, discussion points, open questions); saved to `~/Documents/OpenOats/`; `@Observable` summary state driving share screen loading indicator
+### Phase 5: SummaryEngine + Settings
 
-**Uses:** `OpenRouterClient.complete()` extended with `response_format`; Ollama `format` field branching; `extractLLMSections()` markdown fallback
+**Rationale:** Summary generation (new `SummaryEngine` actor) enriches `PastMeetingDetailView` without requiring structural changes — the detail pane already has a graceful empty state for missing summaries. Settings tab is a sidebar destination in the existing `NavigationSplitView` — low risk, isolated change that reuses the existing `SettingsView`.
+**Delivers:** Structured AI summary at top of detail pane, auto-generated on session end; Settings pane as sidebar tab (reusing existing `SettingsView`). The `Cmd+,` shortcut can remain pointing to the `Settings {}` scene or the sidebar tab — both render the same view.
+**Uses:** Existing `OpenRouterClient` for LLM calls; `SummaryEngine` actor following the existing `NotesEngine` pattern.
 
-**Implements:** `SummaryEngine` actor; two-phase grounding+formatting prompt; transcript-to-prompt pipeline with length heuristics; `AppCoordinator.finalizeCurrentSession()` hook after `awaitPendingWrites()`
+### Phase 6: Search + PDF Export
 
-**Avoids pitfalls:** Pitfall 2 (transcript truncation), Pitfall 3 (hallucinated action items), Pitfall 6 (share screen shown before finalization)
-
-**Research flag:** Needs research-phase attention for the two-phase prompt strategy — the exact prompt structure and grounding pass design should be validated against real meeting transcripts before locking in.
-
-### Phase 3: Slack Integration + Post-Meeting Share UI
-
-**Rationale:** Depends entirely on Phase 2 output. The share UI has no content to display without a `MeetingSummary`. The Slack service and Block Kit formatter can be built in parallel with the share UI since `SlackFormatter` takes a `MeetingSummary` input (defined in Phase 2). Webhook storage (Keychain) and named webhook configuration (Settings) must be designed before the share UI channel-picker UX to avoid the channel-picker pitfall.
-
-**Delivers:** Post-meeting review window showing formatted summary; webhook picker with last-used memory; "Send to Slack" with Block Kit formatted message; "Copy to Clipboard" fallback; inline send success/failure feedback
-
-**Uses:** URLSession + Codable Block Kit structs; `NSPasteboard`; Keychain for webhook URL storage; `UserDefaults` for webhook display labels and last-used-per-meeting-app memory
-
-**Implements:** `SlackService` actor; `SlackFormatter` with per-block 3K-char enforcement; `ChannelStore` actor; `PostMeetingShareUI` NSWindow/NSPanel; `AppSettings` Keychain extension for webhook URLs
-
-**Avoids pitfalls:** Pitfall 1 (webhook channel-lock — webhook picker model), Pitfall 5 (webhook URL in UserDefaults), Pitfall 7 (Block Kit truncation)
-
-**Research flag:** Standard patterns for Block Kit formatting (official docs are complete and high-confidence). The named-webhook UX pattern for webhook-based tools is MEDIUM confidence and should be prototyped early in this phase before full implementation.
+**Rationale:** Both features are additive and independent of each other and of Phases 1-5. Search requires a background search actor with debounce (Pitfall 5). PDF export requires `NSPrintOperation` + `NSAttributedString` (Pitfall 6). Neither changes any existing data models. Placing these last means the core experience is fully stable before the most AppKit-bridge-heavy work begins.
+**Delivers:** `.searchable` modifier on sidebar with background `Task` debounce, filtering by title and transcript content; PDF export via `NSPrintOperation.pdfOperation` with `NSSavePanel` save dialog; `PDFComposer` struct for `NSAttributedString` composition.
+**Avoids:** Pitfall 5 (search main-thread freeze); Pitfall 6 (ImageRenderer single-page clipping).
 
 ### Phase Ordering Rationale
 
-- Phase 1 before Phase 2: `MeetingMode` enum is used in `AppCoordinator.startSession()` which Phase 2 extends at `endSession()`; establishing the enum first avoids merge conflicts
-- Phase 2 before Phase 3: `MeetingSummary` struct is the core data contract between the summary engine and the share UI; building the share UI against a stable typed output prevents downstream rework
-- Settings/Keychain for webhook storage designed at Phase 3 start: the share UI's channel picker data model depends on the `(label, url)` webhook store being defined; designing it late causes UI rework
-- Knowledge base removal in Phase 1: dead code involving `VoyageClient`, `OllamaEmbedClient`, `SuggestionEngine` should be removed before adding new components to keep the diff clean and avoid accidental reuse of removed infrastructure
+- Phases 1-4 follow the explicit build-order dependency chain from ARCHITECTURE.md — each step depends only on what came before it, allowing confident verification at each checkpoint.
+- Summary generation (Phase 5) is separated from Phase 2's read-only detail pane because `SummaryEngine` is a net-new component; the detail pane must handle "no summary yet" gracefully before the engine exists.
+- Search and PDF (Phase 6) are deliberately last because they are pure enhancements — the core experience is complete after Phase 5, and both features introduce the most AppKit-bridge complexity.
+- The "no new dependencies" constraint from PROJECT.md is satisfied throughout — every phase uses existing Apple frameworks.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 2 (Summary Engine):** Two-phase grounding+formatting prompt architecture needs validation against real transcript data before implementation. The exact schema and prompt wording are not settled by this research — they need iteration.
-- **Phase 2 (Summary Engine):** Ollama structured output compatibility is MEDIUM confidence; the `format` field behavior may have changed in newer Ollama versions (GitHub issue #10001 may be resolved). Verify against current Ollama release at implementation time.
+Phases with well-documented patterns (research-phase optional):
+- **Phase 1:** `Window` scene + `NavigationSplitView` + activation policy are extensively documented; ARCHITECTURE.md contains ready-to-use Swift code patterns
+- **Phase 2:** File-based session loading is already established in `SessionStore`; no new APIs introduced
+- **Phase 3:** Live transcript pattern already exists in `ContentView` — this is a port, not a rewrite
+- **Phase 4:** Deletions only; no research needed
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Solo Mode + KB Removal):** Follows existing `MicCapture` and `AppCoordinator` patterns exactly; no novel integration
-- **Phase 3 (Slack / Share UI):** Block Kit formatting and webhook POST are fully documented in official Slack docs (HIGH confidence); implementation is mechanical once the data model is established
+Phases that may benefit from targeted research during planning:
+- **Phase 5 (SummaryEngine):** The structured JSON summary schema and prompt engineering for `OpenRouterClient` are not covered in the current research. The prior milestone's SUMMARY.md (auto-summary milestone) contains relevant findings — reference it when planning Phase 5. Confirm the desired summary format and schema before implementation begins.
+- **Phase 6 (PDF):** PITFALLS.md notes `WKWebView.createPDF` as an alternative to `NSPrintOperation`; STACK.md recommends `NSPrintOperation`. Choose one approach definitively before Phase 6 begins and document the rationale — they have different tradeoffs (NSPrintOperation: pure AppKit, no web engine, synchronous; WKWebView: HTML-based, easier rich styling, async navigation delegate required).
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All technology decisions verified against official docs; zero new dependencies; existing patterns confirmed directly from codebase analysis |
-| Features | HIGH | Competitor feature landscape cross-verified across multiple sources; table stakes well-established; differentiators grounded in documented Slack limitations |
-| Architecture | HIGH | Build order derived from hard code dependencies in `AppCoordinator`; component boundaries match existing codebase patterns; no speculative layering |
-| Pitfalls | HIGH | 5 of 7 pitfalls verified directly against codebase source files; 2 verified against official Slack/OpenRouter docs; all prevention strategies are concrete and actionable |
+| Stack | HIGH | All technologies are built-in Apple frameworks with official documentation; no new dependencies means no version compatibility unknowns; existing codebase reviewed directly |
+| Features | HIGH | Cross-referenced 5 direct competitors (Granola, Otter, Fathom, Fireflies, tl;dv) with official and editorial sources; MVP feature set is well-validated against market |
+| Architecture | HIGH | Build-order derived directly from existing codebase review; component boundaries match established patterns already in the project; no speculative layering |
+| Pitfalls | HIGH | All 7 critical pitfalls confirmed across Apple Developer Forums, 2025 developer post-mortems, and official documentation; recovery costs are documented with concrete prevention strategies |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Ollama `format` field compatibility:** MEDIUM confidence that current Ollama versions handle structured output via the `format` field correctly. Verify at the start of Phase 2 implementation by running a test call against current Ollama before writing production `SummaryEngine` code.
-- **Two-phase prompt quality:** Research recommends a grounding+formatting two-pass strategy based on ACM hallucination data but does not validate specific prompt wording. Treat the first real meeting as a prompt-tuning exercise; build a way to swap prompts without recompiling (e.g., externalize to a settings file) for the early validation period.
-- **Multi-webhook UX discoverability:** The "webhook picker" pattern is architecturally correct but no evidence was found of its UX being well-studied in comparable personal tools. Prototype the Settings entry flow (add/remove/label webhooks) before the Phase 3 share UI implementation sprint.
+- **SummaryEngine schema:** The milestone adds a `SummaryEngine` for structured summaries. The current research covers architecture patterns but not the JSON schema or prompt structure. The prior milestone's SUMMARY.md and FEATURES.md contain directly relevant findings. Define the schema before Phase 5 begins.
+- **WKWebView vs NSPrintOperation for PDF:** Two valid approaches are documented with different tradeoffs. Pick one strategy and commit to it before Phase 6 — switching mid-phase is expensive.
+- **Search index threshold:** In-memory `localizedStandardContains` is validated for ~500 sessions. For heavy users recording many short meetings daily, this threshold could be reached within 1-2 years. Document the threshold in code and note SQLite FTS5 as the v2 upgrade path.
+- **macOS 26 Tahoe `openSettings` regression:** PITFALLS.md flags a known regression in macOS 26 where the `openSettings` environment action is broken. The Settings tab-in-sidebar approach sidesteps this for the main UI. If `Cmd+,` must also open Settings, verify the workaround before shipping on macOS 26.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Slack Incoming Webhooks official docs](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/) — channel-lock behavior, payload format, modern app vs. legacy distinction
-- [Slack Block Kit reference](https://docs.slack.dev/reference/block-kit/blocks/) — character limits per block type, mrkdwn format
-- [Slack per-channel webhook blueprint](https://api.slack.com/best-practices/blueprints/per-channel-webhooks) — confirmed one webhook = one channel constraint
-- [OpenRouter Structured Outputs docs](https://openrouter.ai/docs/guides/features/structured-outputs) — `response_format` support, `require_parameters` usage
-- [OpenRouter Response Healing announcement](https://openrouter.ai/announcements/response-healing-reduce-json-defects-by-80percent) — non-streaming only for JSON repair
-- [Ollama Structured Outputs docs](https://docs.ollama.com/capabilities/structured-outputs) — `format` field, GBNF grammar constraints
-- Codebase direct analysis: `NotesEngine.swift`, `AppCoordinator.swift`, `OpenRouterClient.swift`, `MicCapture.swift`, `SystemAudioCapture.swift`, `AppSettings.swift`
+- Apple Developer Documentation — NavigationSplitView
+- Apple Developer Documentation — NSPrintOperation / pdfOperation(with:inside:to:)
+- Apple Developer Documentation — NSSavePanel
+- Apple Developer Forums — NSPrintOperation PDF without print panel
+- Apple Developer Forums — NavigationSplitView on macOS (selection binding requirements)
+- Apple Developer Forums — Multipage PDF with PDFKit on macOS
+- Existing codebase review (AppCoordinator.swift, NotesView.swift, SessionStore.swift, OpenOatsApp.swift, ContentView.swift)
+- Granola official documentation and changelog
+- Otter.ai features overview (official)
+- Apple HIG — Lists and Tables (date-grouping pattern)
 
 ### Secondary (MEDIUM confidence)
-- [Ollama GitHub issue #10001](https://github.com/ollama/ollama/issues/10001) — OpenAI `response_format` incompatibility; may be patched in newer versions
-- [Fireflies Slack integration docs](https://fireflies.ai/blog/fireflies-slack-integration/) — competitor feature landscape
-- [ACM PACMHCI: LLM-powered Meeting Recap System (2025)](https://dl.acm.org/doi/10.1145/3711074) — 22% action item capture rate, hallucination patterns
-- [Top AI notetakers 2026 — AssemblyAI](https://www.assemblyai.com/blog/top-ai-notetakers) — competitor feature comparison
+- Eclectic Light — SwiftUI on macOS: text, rich text, markdown, PDF views (2024)
+- Peter Steinberger — Showing Settings from macOS Menu Bar Items (2025)
+- Art Lasovsky — Fine-Tuning macOS App Activation Behavior
+- Swift with Majid — Mastering NavigationSplitView in SwiftUI
+- Nil Coalescing — Scene Types in a SwiftUI Mac App (Window vs WindowGroup)
+- tl;dv, Krisp, bluedothq editorial reviews of Granola and Fireflies
+- Daniel Saidi — Creating a Debounced Search Context for Performant SwiftUI Searches (2025)
+- Create With Swift — Exploring the NavigationSplitView
 
-### Tertiary (LOW confidence)
-- [Best AI note takers for in-person meetings — plaud.ai](https://www.plaud.ai/blogs/articles/the-7-best-ai-note-taker-for-in-person-meetings-plus-buying-guide) — vendor source; solo mode use cases
+### Tertiary (MEDIUM-LOW confidence)
+- Medium — Why Every NavigationSplitView Tutorial Failed Me (community post-mortem, confirmed patterns)
+- Medium — Exploring SwiftUI Learnings and Bugs with .searchable (known resource leak, needs validation on target OS)
 
 ---
 *Research completed: 2026-03-21*

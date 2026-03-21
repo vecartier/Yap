@@ -1,166 +1,247 @@
 # Pitfalls Research
 
-**Domain:** macOS meeting transcription app — adding auto-summary, solo mode, and Slack integration to an existing Swift 6.2 codebase (OpenOats fork)
+**Domain:** macOS app window milestone — adding main window + NavigationSplitView + full-text search + PDF export to an existing menu-bar-only Swift 6.2 app
 **Researched:** 2026-03-21
-**Confidence:** HIGH (codebase read directly; external claims verified against official Slack docs and OpenRouter docs)
+**Confidence:** HIGH (macOS window management and SwiftUI pitfalls verified across Apple Developer Forums, 2025 developer post-mortems, and official documentation)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Slack Webhook Is Channel-Locked — "Channel Picker" UX Will Not Work As Expected
+### Pitfall 1: WindowGroup Spawns Multiple Main Window Instances
 
 **What goes wrong:**
-The PROJECT.md specifies a "post-meeting share screen with channel picker" and "recurring meeting channel memory (auto-populate last-used channel)." Modern Slack incoming webhooks are permanently bound to the channel selected when the webhook was created in the Slack app UI. You cannot override the destination channel at send time in the JSON payload — the `channel` field in Block Kit messages sent via webhook is ignored. A "channel picker" that lets users select from a list of channels and routes accordingly is not achievable with a single webhook URL.
+`WindowGroup` — the default SwiftUI scene for macOS content windows — allows the user (and the `openWindow` action) to create multiple independent instances of the window. Clicking "Open MeetingScribe" from the menu bar popover a second time opens a second window rather than bringing the existing one to the front. By the third invocation the app has three identical windows with no clear primary.
 
 **Why it happens:**
-Developers assume Slack webhooks behave like the `chat.postMessage` bot API, where the `channel` parameter in the payload controls destination. Slack intentionally locked this down in 2018 when they deprecated legacy custom integrations.
+`WindowGroup` is designed for document-based apps where multiple instances make sense. It is the first example in every SwiftUI-for-macOS tutorial, so developers reach for it without recognizing the multi-instance behavior.
 
 **How to avoid:**
-Re-scope the "channel picker" to a "webhook picker." The user configures one or more named webhooks in Settings (e.g., "#engineering" → webhook URL A, "#product" → webhook URL B). The share screen lets them pick which named webhook to send to. Store the last-used webhook URL per meeting app (e.g., last Zoom webhook, last solo webhook) as the "channel memory." This matches the PROJECT.md intent without requiring the impossible.
+Use the `Window` scene type (not `WindowGroup`) for the main app window. `Window` guarantees a single unique instance. When `openWindow(id:)` is called and the window already exists, macOS brings the existing window to the front instead of creating a new one. This matches the Granola/Apple Notes model precisely.
+
+```swift
+// Correct — singleton window
+Window("MeetingScribe", id: "main") {
+    ContentView()
+}
+
+// Wrong — multiple instances possible
+WindowGroup("MeetingScribe") {
+    ContentView()
+}
+```
 
 **Warning signs:**
-- Any design that includes a free-text channel name field (like "#engineering") without a corresponding webhook URL field
-- Code that constructs a JSON payload with `"channel": "#something"` for webhook delivery
-- UI mockups showing a dynamic channel list populated from Slack's API
+- Using `WindowGroup` without a `handlesExternalEvents(matching:)` guard
+- The "Open MeetingScribe" button in the popover never checks if a window is already on screen
+- Two windows appear when the menu bar item is clicked twice
 
 **Phase to address:**
-Settings/Slack integration phase — define the data model for named webhook configurations before building any share UI.
+Main window phase — choose `Window` scene type at the outset; retrofitting later requires data-model surgery.
 
 ---
 
-### Pitfall 2: Transcript Truncation Silently Discards the Middle of the Meeting
+### Pitfall 2: Main Window Appears Behind Other App Windows (Focus and Activation Policy)
 
 **What goes wrong:**
-`NotesEngine.formatTranscript()` already implements a truncation strategy at 60,000 characters: it keeps the first 1/3 and last 1/3 of utterances, discarding the middle. For a 90-minute meeting this typically means 20-40 minutes of discussion — often the most substantive portion — is silently omitted from the summary. The LLM will not flag the gap. Action items and decisions from the middle are lost without any user-visible warning.
+macOS apps running as menu bar accessories use `NSApplication.ActivationPolicy.accessory`, which tells the OS "this is a background utility." Windows created by accessory-policy apps are not automatically brought to the front and focused when shown — they often appear hidden behind the front-most application. The user clicks "Open MeetingScribe," nothing visibly happens, and they assume the app is broken.
 
 **Why it happens:**
-The existing truncation was designed for notes generation where the model streams a response and token cost is variable. Extending this unchanged for structured summaries produces the same silent failure. The `maxChars = 60_000` constant is not surfaced anywhere in the UI.
+Menu bar apps are background utilities. The OS does not steal focus on behalf of a background app. The developer tests with their own app in the foreground and never notices the bug. The app must explicitly activate itself before showing the window.
 
 **How to avoid:**
-For structured summaries, switch from character-count truncation to token-aware chunking with explicit user notification:
-1. If the transcript exceeds the model's practical context window (~80K tokens for most OpenRouter models, ~8K for local Ollama), surface a warning in the share screen ("Long meeting: middle section summarized separately").
-2. For Ollama/MLX local models with small context windows (~4K–8K tokens), implement a map-reduce approach: summarize in segments, then summarize the segment summaries.
-3. Never silently discard content — show a character/token count or a "meeting was long — summary covers highlights" disclaimer.
+When opening the main window, call `NSApp.activate(ignoringOtherApps: true)` immediately before showing the window, and temporarily switch the activation policy to `.regular` if a dock icon is required for reliable focus. The sequence is:
+
+1. `NSApp.setActivationPolicy(.regular)` — allows the window to receive focus
+2. `NSApp.activate(ignoringOtherApps: true)` — brings app to front
+3. `window.makeKeyAndOrderFront(nil)` — shows and focuses the window
+
+When the window closes, optionally restore `.accessory` if a dock icon is not desired.
+
+Additionally: the `openSettings` environment action broken in macOS 26 Tahoe is a known regression that requires a workaround (hidden window trick). Monitor Apple release notes before shipping on macOS 26.
 
 **Warning signs:**
-- Summary generation that reuses `NotesEngine.formatTranscript()` unchanged for a new `SummaryEngine`
-- No token or character count visible to the user before or after summary generation
-- Long meetings (>60 min) consistently produce summaries missing decisions made mid-call
+- "Open MeetingScribe" link in the popover calls `openWindow(id:)` without any activation call
+- Window appears but keyboard focus remains in the previously active app
+- Users on MacBooks report the window "appeared somewhere" but cannot see it
 
 **Phase to address:**
-Summary generation phase — design the transcript→prompt pipeline before writing the LLM call. Add a meeting length heuristic check that selects the right summarization strategy.
+Main window phase — the activation sequence must be wired into the menu bar "Open" action from day one; it cannot be deferred.
 
 ---
 
-### Pitfall 3: LLM Summary Presents Hallucinated Action Items as Fact
+### Pitfall 3: NavigationSplitView Selection State Not Bound — Sidebar Shows No Selection
 
 **What goes wrong:**
-Meeting summary LLMs are trained to generate "helpful-sounding" outputs. When the transcript is ambiguous — someone said "we should look into X" — the model may emit "Action item: [Name] to research X by [date]" including a fabricated name and deadline that never appeared in the transcript. These look authoritative in the Slack message. Research from ACM (2025) found off-the-shelf summarization tools capture only 22% of explicitly stated commitments and produce 14% false positive action items.
+`NavigationSplitView` requires an explicit `@State` binding for the selected sidebar item. When the selection binding is not wired into the `List` — for example, when the developer uses a `NavigationLink` inside the list without connecting it to the split view's selection — the sidebar never highlights the current item. Clicking a meeting in the list navigates the detail pane correctly but the list shows no selection. On macOS the visual feedback is critical — without it the UI looks broken.
 
 **Why it happens:**
-The existing `NotesEngine` uses a single streaming prompt with a freeform markdown template. The model fills in structural slots (action items, decisions) even when evidence is thin. This is an LLM optimization-for-probability problem, not a prompt length problem.
+Most NavigationSplitView tutorials show the two-column layout but omit the `selection:` parameter on the outer `NavigationSplitView` and the `tag:` modifier on each `List.ForEach` item. It compiles and partially works, making the missing binding invisible until QA.
 
 **How to avoid:**
-Use a two-phase structured prompt strategy:
-1. Phase 1: "Extract only statements from the transcript that are explicit commitments, decisions, or questions. Quote the exact transcript text." (grounding pass)
-2. Phase 2: "Format the following extracted statements as a structured summary." (formatting pass)
+Wire the selection binding explicitly:
 
-This chains two non-streaming `complete()` calls (already available in `OpenRouterClient`) rather than a single streaming call. The grounding pass dramatically reduces hallucination by forcing the model to cite evidence before summarizing it.
+```swift
+@State private var selectedMeeting: MeetingSession?
 
-Additionally, include a disclaimer in the share screen: "Review before sending — AI summaries can miss context or misattribute ownership."
+NavigationSplitView(columnVisibility: $columnVisibility) {
+    List(meetings, selection: $selectedMeeting) { meeting in
+        MeetingRowView(meeting: meeting)
+            .tag(meeting)
+    }
+} detail: {
+    if let meeting = selectedMeeting {
+        MeetingDetailView(meeting: meeting)
+    } else {
+        ContentUnavailableView("Select a meeting", systemImage: "list.bullet.rectangle")
+    }
+}
+```
 
 **Warning signs:**
-- Summary contains specific names and deadlines that seem oddly precise for a casual discussion
-- Users report receiving Slack messages where they "owned" action items they don't remember agreeing to
-- Prompt structure sends the full transcript directly to a formatting instruction in a single message
+- `List` inside the sidebar column uses `NavigationLink` without `selection:` on the `List` itself
+- Clicking a row navigates correctly but no row is highlighted in the sidebar
+- Programmatic selection (e.g., "open most recent meeting") has no visible effect
 
 **Phase to address:**
-Summary generation phase — the prompt architecture decision must be made before implementing `SummaryEngine`. Do not reuse `NotesEngine.generate()` verbatim for summaries.
+Main window / sidebar phase — establish the selection binding pattern before building any meeting row views.
 
 ---
 
-### Pitfall 4: Solo Mode Breaks the Existing Session Lifecycle Silently
+### Pitfall 4: Live Transcript Updates Block the Main Thread
 
 **What goes wrong:**
-`AppCoordinator.startTranscription()` calls `await transcriptionEngine?.start()` which internally initializes both `MicCapture` and `SystemAudioCapture`. For solo mode (mic-only), `SystemAudioCapture` should be skipped entirely — but if the code path is not explicitly separated, `SystemAudioCapture` will attempt `AudioHardwareCreateProcessTap()`, which may fail silently on machines without a running audio output process, or worse, succeed and capture silence, creating an empty second audio stream that pollutes the transcript merge logic.
+The existing transcription pipeline publishes utterances from background audio processing tasks. When the main app window shows a live transcript view, developers wire these updates directly into a `@State` array on a `@MainActor` view. Frequent utterance arrivals (every 0.5–2 seconds during active speech) cause continuous `@MainActor` context-switches from the audio pipeline. Under heavy transcription load this produces visible jank in the sidebar list scrolling and detail pane rendering.
 
 **Why it happens:**
-The existing `TranscriptionEngine` was designed with the dual-stream assumption baked in. It is tempting to just pass a flag and skip the system audio capture, but the aggregate device creation and IOProc registration in `SystemAudioCapture` run regardless of whether audio data ever arrives.
+`@Observable` and `@Published` properties updated from background threads still require main-thread dispatch for UI rendering. The existing menu bar popover is simple enough (one label, two buttons) that this never manifested as a problem. The full window with a live-updating transcript list and sidebar is far more sensitive.
 
 **How to avoid:**
-Create a concrete separation: `MeetingMode.solo` vs `MeetingMode.call`. At session start, `AppCoordinator` should instantiate a `TranscriptionEngine` configured for the mode, not add a runtime skip flag. The simplest approach is a factory method on `TranscriptionEngine` or a separate `SoloTranscriptionEngine` subtype that only initializes `MicCapture`. This avoids patching `SystemAudioCapture`'s teardown path.
+- The transcription engine already publishes utterances via an `AsyncStream` or `@Observable` property. Ensure updates are coalesced before reaching the view: batch utterances with a 1-second debounce when the window is open.
+- Mark `AppCoordinator` (already `@Observable`) as `@MainActor`-isolated so all mutations happen on the main actor; do not push work from within the view's `onReceive` handler.
+- Avoid updating a live-scroll `ScrollView` on every utterance — use a `.onChange` with a debounce or animate only on paragraph boundaries.
 
 **Warning signs:**
-- `TranscriptionEngine.start()` receives a `skipSystemAudio: Bool` parameter
-- `SystemAudioCapture.bufferStream()` is called then immediately cancelled in solo mode
-- Transcript lines in solo sessions contain unexpected "Them:" utterances (echo of mic into system audio path)
+- The live transcript view calls `scrollTo` on every new utterance
+- Sidebar list becomes unresponsive during active recording
+- Instruments shows frequent main thread activity during transcription with no user interaction
 
 **Phase to address:**
-Solo mode phase — the engine initialization architecture must be settled first, before wiring up the menu bar toggle.
+Main window / live transcript phase — establish the update throttling strategy before wiring the transcript stream to the view.
 
 ---
 
-### Pitfall 5: Slack Webhook URL Stored in UserDefaults (Plain Text Secret Leak)
+### Pitfall 5: Full-Text Search Blocks the Main Thread on Every Keystroke
 
 **What goes wrong:**
-Webhook URLs are effectively secrets — anyone who has the URL can post to that Slack channel on behalf of the workspace. Storing them in `UserDefaults` (backed by a plain `.plist` in `~/Library/Preferences/`) means the URL is visible to any app on the machine that reads preferences, shows up in backup files without encryption, and appears in crash reports if the settings object is dumped.
+The search feature requires scanning all past transcript and summary Markdown files in `~/Documents/OpenOats/`. A naive implementation reads every file synchronously inside the `onChange(of: searchText)` handler. With 200+ past meetings each averaging 50KB, this is 10MB+ of disk I/O on the main thread. The result: the search field lags, the sidebar freezes, and the app feels broken.
 
 **Why it happens:**
-The existing codebase already handles API keys correctly via macOS Keychain (verified in `AppSettings.swift` which uses `Security` framework). The instinct to store webhook URLs in `AppSettings` alongside non-secret preferences (model selection, locale) is natural but wrong for secrets.
+File I/O on the main thread is the classic macOS bug. It is invisible during development with 3 test meetings and an SSD. It emerges in production with 6 months of accumulated meetings.
 
 **How to avoid:**
-Store webhook URLs in the macOS Keychain alongside the existing OpenRouter API key, using a service identifier like `com.meetingscribe.slack-webhook`. The existing Keychain access pattern in `AppSettings.swift` should be reused directly. `UserDefaults` may store a display label ("My team channel") but not the URL itself.
+- Run all search I/O on a background `Task` (detached or using a dedicated actor).
+- Debounce the search query: do not start a search until the user has paused typing for 250ms (use `Task.sleep` or Combine's `.debounce` operator).
+- Cache search index in memory: on app launch, build an in-memory index of meeting metadata (title, date, first 200 chars) in a background Task. Full transcript content is only loaded for the selected meeting.
+- For long-term scale (hundreds of meetings), use `NSMetadataQuery` or a simple SQLite FTS5 index, but an in-memory `[String: String]` map loaded once at launch is sufficient for v1.
+
+```swift
+// Wrong — synchronous on main thread
+.onChange(of: searchText) { query in
+    results = allMeetings.filter { meeting in
+        (try? String(contentsOf: meeting.transcriptURL)) // blocks main thread
+            .map { $0.contains(query) } ?? false
+    }
+}
+
+// Correct — background task with debounce
+.onChange(of: searchText) { query in
+    searchTask?.cancel()
+    searchTask = Task {
+        try await Task.sleep(for: .milliseconds(250))
+        let results = await searchService.search(query: query)
+        await MainActor.run { self.results = results }
+    }
+}
+```
 
 **Warning signs:**
-- Webhook URLs stored with `@AppStorage` or directly in `UserDefaults.standard.set()`
-- Webhook URL visible when running `defaults read` in Terminal
-- Settings serialized with `Codable` that includes the webhook URL as a plain string field
+- `onChange(of: searchText)` directly calls file I/O APIs without `Task { }` wrapping
+- Search results appear instantaneously in testing (because only 3 test meetings exist)
+- No debounce on the search text binding
 
 **Phase to address:**
-Settings/Slack integration phase — establish the Keychain storage pattern for webhook URLs before the share UI is wired.
+Search phase — establish the background search actor and debounce strategy before wiring the searchable modifier.
 
 ---
 
-### Pitfall 6: Post-Meeting Share Screen Blocks the `finalizeCurrentSession` Pipeline
+### Pitfall 6: PDF Export Produces a Single Page (Content Clipped) or Blank Output
 
 **What goes wrong:**
-`AppCoordinator.finalizeCurrentSession()` is an async chain: drain audio → drain refinements → drain JSONL writes → backfill refined text → write sidecar → close files → encode audio. The summary generation needs the fully drained transcript, so it must happen after step 3 (drain JSONL). If the share screen is shown too early — before finalization completes — the summary will be generated from a partial transcript missing the last few utterances. In worst case with a 30-second finalization timeout, the share screen may show a loading state for 30+ seconds with no feedback.
+`ImageRenderer` — the easiest SwiftUI-native PDF generation path — renders the view at its natural size in a single CGContext page. For a meeting transcript longer than one screen, the rendered content is clipped to one page. Worse, `ImageRenderer` renders with a "default" environment detached from the app's SwiftUI environment: `@EnvironmentObject`, custom fonts, and dynamic colors do not apply. The resulting PDF looks nothing like the in-app view and is cut off after one page.
 
 **Why it happens:**
-The `finalizationComplete` event already triggers `lastEndedSession` to populate, which the UI watches. If summary generation is kicked off at `finalizationComplete`, the timing is correct. But it is tempting to start streaming the summary as soon as the user taps "Stop" — before finalization completes — to appear fast.
+`ImageRenderer` is prominently documented for PDF generation and works perfectly for screenshots and short content. The single-page limitation and environment isolation are buried footnotes. Developers discover the clipping only when testing with a 90-minute meeting transcript.
 
 **How to avoid:**
-Summary generation must be triggered from within `finalizeCurrentSession()` after step 3 (after `sessionStore.awaitPendingWrites()`), not as a reaction to `lastEndedSession` in the UI layer. This ensures the full transcript is available. The share screen should show a "Generating summary…" state tied to summary completion, not to session end. Use a separate `@Observable` summary state on `AppCoordinator` (similar to `NotesEngine.isGenerating`) that drives the share screen's loading indicator.
+Use `NSAttributedString` + `NSPrintOperation` for macOS PDF generation. This is the reliable multi-page path:
+
+1. Build an `NSAttributedString` from the transcript and summary (Markdown → `NSAttributedString` is supported via `AttributedString` bridging in macOS 15+).
+2. Use `NSPrintOperation` with `NSPrintInfo` configured for PDF output (`PMPrintSettings` destination set to file).
+3. Alternatively, use the HTML-to-PDF path: generate a simple HTML string from the summary/transcript and use `WKWebView.createPDF(configuration:)` (available macOS 11+) which handles pagination natively.
+
+For v1, the `WKWebView.createPDF` approach is the most reliable and requires the least AppKit ceremony:
+
+```swift
+let webView = WKWebView()
+webView.loadHTMLString(htmlContent, baseURL: nil)
+// Wait for load, then:
+let pdfData = try await webView.pdf(configuration: WKPDFConfiguration())
+```
+
+Avoid `ImageRenderer` for anything longer than a single screen.
 
 **Warning signs:**
-- Summary generation starts in a `onChange(of: coordinator.lastEndedSession)` view modifier
-- Summary result misses the last 2-5 lines of what was said
-- The share screen appears instantly after stopping with a very short summary on long meetings
+- PDF export uses `ImageRenderer` with a `GeometryReader` to "fix" the single-page issue
+- Exported PDF looks correct for 5-minute test meetings but clips at page 1 for real meetings
+- Custom fonts or dark mode colors do not appear in the exported PDF
 
 **Phase to address:**
-Summary generation phase — the hook point into `AppCoordinator.finalizeCurrentSession()` must be designed explicitly, not bolted on after the share screen is built.
+PDF export phase — choose the export strategy at the outset; `ImageRenderer` is a trap that looks correct in short tests.
 
 ---
 
-### Pitfall 7: Slack Block Kit Character Limits Silently Truncate the Summary
+### Pitfall 7: NavigationSplitView `.prominentDetail` Does Not Work on macOS
 
 **What goes wrong:**
-A Slack section block accepts a maximum of 3,000 characters. A single markdown block is capped at 12,000 characters. The total payload cap before Slack returns HTTP 400 is approximately 40,000 characters. Meeting summaries that include a full discussion section plus action items plus decisions can easily exceed 3,000 characters for a 60-minute meeting. Slack silently truncates at the block level — the message sends successfully (HTTP 200) but the posted message is cut off mid-sentence.
+`NavigationSplitViewStyle.prominentDetail` — which hides the sidebar and expands the detail pane to fill the window — does not work on macOS. Using it causes the layout to silently fall back to the default balanced split view. Developers who test on iOS/iPad and then run on macOS find their carefully designed full-detail presentation mode never activates.
 
 **Why it happens:**
-Developers test with short summaries from brief meetings and never hit the limit. The 200 OK response masks the truncation entirely — there is no error in the response body.
+Apple's documentation does not prominently flag that `.prominentDetail` is iOS/iPadOS-only. Cross-platform SwiftUI code that uses it "just works" on iOS but silently degrades on macOS.
 
 **How to avoid:**
-Split the Slack message into multiple blocks: one section block per summary category (Decisions, Action Items, Key Points, Open Questions), each independently capped at 3,000 characters. If any single category exceeds 3,000 characters, truncate with "… see full notes in transcript" and a fallback note. Test with a 90-minute meeting transcript before shipping.
+On macOS, control sidebar visibility via `NavigationSplitViewVisibility` binding and `columnVisibility` instead of `prominentDetail`. To expand the detail pane, set `columnVisibility = .detailOnly`. This is the supported macOS path for collapsing the sidebar programmatically (e.g., when entering full-transcript reading mode).
+
+```swift
+@State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+
+NavigationSplitView(columnVisibility: $columnVisibility) {
+    SidebarView()
+} detail: {
+    DetailView()
+}
+
+// To collapse sidebar:
+Button("Focus") { columnVisibility = .detailOnly }
+```
 
 **Warning signs:**
-- The Slack formatter puts the entire summary into a single `section` block with `type: "mrkdwn"`
-- No character count check before constructing the Block Kit payload
-- Slack messages from long meetings are cut off mid-action-item
+- `.navigationSplitViewStyle(.prominentDetail)` in any view that targets macOS
+- A "full reading mode" button that works on simulator (iOS) but has no effect when run on macOS
+- Documentation references that say "prominentDetail" without an OS qualifier
 
 **Phase to address:**
-Slack formatting phase — the Block Kit formatter must enforce per-block limits before the first integration test.
+Main window / navigation phase — audit all NavigationSplitView style modifiers for macOS compatibility before implementing the detail pane.
 
 ---
 
@@ -168,11 +249,12 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Reuse `NotesEngine.generate()` for summaries by adding a new template | Zero new code | Template conflation — notes and summaries diverge in structure; one prompt cannot serve both well | Never — create `SummaryEngine` as a separate type |
-| Store all Slack config in `AppSettings` `Codable` struct | Simple persistence | Webhook URL leaks into preferences plist | Never — use Keychain for URLs |
-| Trigger summary from UI `onChange` of `lastEndedSession` | Simple wiring | Race: summary runs against partial transcript | Only for prototyping; must be fixed before first real use |
-| Single webhook URL in settings (no multi-webhook support) | Simpler settings UI | Channel picker UX goal is permanently blocked | Acceptable for MVP if "channel picker" is reframed as "webhook picker" |
-| Skip system audio capture with a bool flag in existing `TranscriptionEngine` | Minimal code change | Aggregate device and IOProc lifecycle still runs; audio engine teardown path has subtle bugs | Never — use mode-specific initialization |
+| Use `WindowGroup` instead of `Window` for main window | Works immediately, familiar API | Multiple window instances appear; "bring to front" logic breaks | Never — use `Window` scene from the start |
+| Call `openWindow` without activating the app first | One-line open action | Window appears behind other apps; users assume app is broken | Never for the primary window action |
+| Search executes synchronously on `onChange` | Instant results in dev with 3 meetings | Freezes on main thread with 100+ real meetings | Never — always background search |
+| Use `ImageRenderer` for PDF export | 10-line implementation | Clips at one page; no environment access; fails on long transcripts | Only for single-screen screenshots, not transcripts |
+| Wire live transcript stream directly to view `@State` with no debounce | Simple data binding | Main thread congestion during heavy transcription | Only for prototyping; debounce before shipping |
+| In-memory search index only (no SQLite FTS) | Zero extra infrastructure | Adequate for ~500 meetings but sluggish above that | Acceptable for v1; document the threshold |
 
 ---
 
@@ -180,12 +262,11 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Slack Incoming Webhook | Sending `channel` field in payload to override destination | Webhooks ignore the `channel` field entirely; destination is fixed at webhook creation time |
-| Slack Incoming Webhook | Assuming HTTP 200 means the message was fully displayed | HTTP 200 confirms delivery receipt, not display completeness; truncated blocks still return 200 |
-| Slack Block Kit | Putting entire summary in one `section` block | Split by summary category; enforce 3,000-char limit per section block |
-| OpenRouter structured output | Using `stream: true` with `response_format` for JSON schema | Response Healing (OpenRouter's JSON repair) only works for non-streaming requests; use `complete()` not `streamCompletion()` for structured summary JSON |
-| Ollama local model | Sending full transcript to a model with 4K–8K context window | Local models (Ollama/MLX) often have small context windows; the 60K-char transcript will be truncated by the model itself without error — test with real meeting lengths |
-| macOS Keychain | Reading Keychain in a Swift 6.2 actor without proper isolation | Keychain reads are synchronous blocking calls; wrap in `Task { }` or use `nonisolated` access pattern matching the existing `AppSettings` Keychain implementation |
+| `NSApp.activate` from SwiftUI | Calling from a SwiftUI `Button` action that runs on MainActor in `.accessory` policy | Switch activation policy to `.regular` first, then `activate(ignoringOtherApps: true)`, then show window; restore policy if needed on close |
+| `WKWebView.createPDF` | Calling before `webView.loadHTMLString` completes navigation | Implement `WKNavigationDelegate.webView(_:didFinish:)` and call `createPDF` only from there |
+| `NSMetadataQuery` for spotlight search | Running query on main thread; missing `NSMetadataQueryDidFinishGatheringNotification` observer setup | Schedule query on a background queue; observe both `DidUpdate` and `DidFinishGathering` notifications |
+| `NavigationSplitView` on macOS 15 | Using `NavigationPath` (for stack navigation) inside the detail column | `NavigationPath` is for `NavigationStack`, not for split view detail columns; use `@State` selection binding on the split view itself |
+| FileManager directory enumeration | Enumerating `~/Documents/OpenOats/` synchronously on the main thread at app launch | Load meeting list in a background `Task` on first appear; cache results in a `@MainActor` observable store |
 
 ---
 
@@ -193,9 +274,11 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Streaming summary generation blocks `@MainActor` for token updates | UI freezes during summary generation; menu bar popover becomes unresponsive | Summary token updates must be yielded via continuation on background task, published to `@MainActor` via `withMutation` pattern already used in `NotesEngine` | Immediately on first real use with a streaming model |
-| Non-streaming two-phase summary (grounding + format) with local Ollama | 60–120 second wait with no UI feedback | Show per-phase progress indicator; run both phases in a single `Task` with intermediate state updates | For meetings >30 min with local Ollama models |
-| `URLSession.shared` for Slack webhook POST from `@MainActor` | Warning in Swift 6.2: Sendability of URLSession from MainActor | Use `URLSession.shared.data(for:)` from a `Task { }` not directly on `@MainActor`; pattern is already correct in `OpenRouterClient` (actor-isolated) | Build warnings in Swift 6.2 strict concurrency mode |
+| Loading all transcript files at app launch | Slow launch with 6+ months of meetings; spinning beach ball | Lazy-load transcript content only when a meeting row is selected | At ~50 meetings on slow HDDs; immediate on network volumes |
+| Re-filtering entire meeting list on every search keystroke with no debounce | Search field lags; sidebar flickers on every character | 250ms debounce + background Task for all file I/O | Immediately visible with >20 meetings |
+| Live transcript `ScrollView` scrolls on every utterance | Visible scroll jank; sidebar list stutters during recording | Scroll only when the last utterance's id changes (not on every append) and only if auto-scroll is enabled | With fast speech and >50 utterances on screen |
+| `PDFView` (from PDFKit) inside a SwiftUI `ScrollView` | PDFView disappears inside ScrollView; scrolling stops working | PDFKit's `PDFView` cannot be placed inside a SwiftUI `ScrollView` — use `NSViewRepresentable` with its own scroll behavior | Always — this is a structural incompatibility |
+| `WKWebView` for PDF generation holds a strong reference in a `@State` | Memory never freed after export | Store WKWebView in a local variable, not in `@State`; let it dealloc after PDF data is captured | In apps that export many PDFs in a session |
 
 ---
 
@@ -203,9 +286,9 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Slack webhook URL in `UserDefaults` or Codable `AppSettings` | Any local process or backup can read the URL; URL in crash reports | Store in macOS Keychain with same pattern as OpenRouter API key in `AppSettings.swift` |
-| Logging the webhook URL in `os.Logger` for debugging | URL appears in Console.app and system logs; visible to other apps | Never log the URL; log only the host portion (e.g., `hooks.slack.com`) and HTTP response code |
-| Sending transcript text to Slack (not just summary) | Raw audio transcript contains PII (names, medical info, financials) in meetings | Only the LLM-generated summary goes to Slack, never raw transcript lines — enforce this at the formatter layer |
+| Exposing the full transcript file path in URL scheme or pasteboard | Another app could read raw audio transcripts containing PII | Share only the meeting ID or a bookmark; resolve paths only within the app sandbox |
+| PDF saved to a world-readable tmp directory | Other apps can read exported PDFs before user saves them | Use `NSSavePanel` to let the user choose the destination; avoid writing to `/tmp` as an intermediate step |
+| Displaying raw file paths in the UI | Users see absolute paths like `/Users/vcartier/Documents/...`; leaks home directory username | Display relative or display-name paths only in the UI |
 
 ---
 
@@ -213,22 +296,25 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Share screen appears with no loading state while summary is generating | User sees blank summary; unclear if it failed or is loading | Show skeleton/spinner tied to `SummaryEngine.isGenerating`; disable Send button until ready |
-| "Send to Slack" fires immediately on share screen open with no review step | User sends a hallucinated or incorrect summary before reading it | Summary is always shown in full before the Send button is enabled; no auto-send on session end |
-| Single "Send" button with no confirmation for first-time webhook send | User accidentally sends to wrong channel (wrong webhook selected) | Show the webhook display name ("My team channel") prominently in the share screen; first send to a new webhook shows a confirmation alert |
-| Share screen dismisses after Send with no success/failure feedback | User cannot tell if Slack delivery succeeded or silently failed | Show inline success state ("Sent to #engineering") or error state with retry button; HTTP errors from Slack must surface, not be swallowed |
-| Solo mode recording indistinguishable from call mode in menu bar | User starts call mode for an in-person meeting; system audio capture runs for no reason | Menu bar recording indicator must label the mode: "Recording (solo)" vs "Recording (call)" |
+| Main window opens but keyboard focus stays in the previously active app | User starts typing a search query and nothing happens | Always call `NSApp.activate` + `makeKeyAndOrderFront` in sequence when opening the window |
+| No `ContentUnavailableView` when meeting list is empty | Blank white sidebar on first launch looks like a loading failure | Show a "No meetings yet — start recording to see transcripts here" empty state in both the list and the detail pane |
+| Sidebar selection resets to nil when window regains focus | User loses their place every time they switch apps | Persist `selectedMeetingID` in `@AppStorage` or `@State` at the app coordinator level, not locally in the view |
+| Search clears when switching away and back to the window | User loses their search context | Store `searchText` in a `@State` tied to the window's scene, not embedded deep in the list view |
+| PDF export saves to an undiscoverable location | User cannot find the exported PDF | Always use `NSSavePanel` — never silently export to Documents or Desktop without confirmation |
+| Live transcript appends cause the whole detail pane to re-render | Text flickers during active recording | Use `id:` on `ForEach` with stable meeting-line IDs, not array indices |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Slack send:** Verify HTTP response code is 200 AND that the message appears in Slack with full content — a 200 with truncated display still looks done in code
-- [ ] **Summary generation:** Test with a 90-minute meeting (generate a long synthetic transcript) — short test meetings never trigger the truncation pitfall
-- [ ] **Solo mode:** Verify `SystemAudioCapture` is not initialized or registered at all — not just skipped after initialization — by checking that no aggregate CoreAudio device is created during a solo session
-- [ ] **Webhook storage:** Run `defaults read` for the app's bundle ID and confirm webhook URLs do not appear — Keychain storage is correctly isolated
-- [ ] **Finalization timing:** Log transcript line count at summary generation time and at session stop time — they must match; any difference indicates a race condition
-- [ ] **Block Kit limits:** Send a Slack message from a 90-minute meeting and verify the posted message is complete, not cut off
+- [ ] **Window singleton:** Open the main window, switch to another app, click the menu bar "Open MeetingScribe" link again — verify only one window exists and it comes to the front (not a second window)
+- [ ] **Window focus:** Open the main window while Safari is in the foreground — verify the window actually has keyboard focus and search works immediately
+- [ ] **Live transcript in window:** Start a recording with the main window open — verify the sidebar list stays responsive and scrolls to the latest utterance without visual jank
+- [ ] **Search with real data:** Test search with 50+ synthetic meeting files — verify the UI does not freeze and results appear within 500ms
+- [ ] **PDF export length:** Export a PDF from a 90-minute meeting — verify it is multi-page and not clipped at page 1
+- [ ] **PDF export content:** Open the exported PDF and verify it contains both the summary and the full transcript, not a screenshot of the current view
+- [ ] **NavigationSplitView selection:** Click a meeting in the sidebar — verify the row is highlighted and remains highlighted when switching focus to the detail pane
+- [ ] **Empty state:** Launch the app with no meetings (clean Documents folder) — verify both sidebar and detail pane show informative empty states, not blank white
 
 ---
 
@@ -236,10 +322,11 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Channel-picker built before webhook model discovered | MEDIUM | Rename "channel picker" to "webhook picker" in UI; add URL field per entry; data model change is additive |
-| Webhook URL leaked to UserDefaults in shipped build | HIGH | Force migration: read from UserDefaults, write to Keychain, delete from UserDefaults on next launch; notify users via release notes |
-| Finalization race causing partial summaries | LOW | Add assertion in `SummaryEngine.generate()` that transcript count matches expected count from `sessionStore`; fix hook point in `finalizeCurrentSession()` |
-| Block Kit truncation discovered post-ship | LOW | Add per-block character guard in the Slack formatter; redeploy; no user data at risk |
+| `WindowGroup` used instead of `Window` — multiple windows ship | MEDIUM | Replace scene type; add "close extra windows" logic on app activate; single-release migration |
+| Main thread search freeze discovered post-ship | LOW | Wrap search in background Task with debounce; ships as a patch; no data model change |
+| `ImageRenderer` PDF single-page clipping discovered post-ship | MEDIUM | Replace export implementation with `WKWebView.createPDF`; no data model change, but UX flow may need updating |
+| Live transcript jank discovered during demo | LOW | Add debounce/batching to transcript update path; isolated change in one view |
+| Window activation policy misconfiguration causing windows not to focus | LOW | Correct activation sequence in the "Open" button action; isolated fix |
 
 ---
 
@@ -247,26 +334,30 @@ Slack formatting phase — the Block Kit formatter must enforce per-block limits
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Webhook is channel-locked (Pitfall 1) | Slack integration phase — before share UI design | Data model includes per-webhook `(label, url)` pairs; no free-text channel field in UI |
-| Transcript truncation loses middle (Pitfall 2) | Summary generation phase — transcript pipeline design | Test with synthetic 90-min transcript; assert all utterances are represented or a warning is shown |
-| Hallucinated action items (Pitfall 3) | Summary generation phase — prompt architecture | Two-phase prompt implemented; grounding pass verified with a known transcript |
-| Solo mode breaks session lifecycle (Pitfall 4) | Solo mode phase — engine initialization | No `AudioHardwareCreateProcessTap` call in solo session (verified via log search) |
-| Webhook URL in UserDefaults (Pitfall 5) | Slack integration phase — settings persistence design | `defaults read` shows no URL; Keychain contains the URL |
-| Share screen shown before finalization completes (Pitfall 6) | Summary generation phase — coordinator hook point | Transcript line count in summary equals transcript line count at session end |
-| Block Kit truncation (Pitfall 7) | Slack formatting phase — Block Kit formatter implementation | 90-min meeting Slack message is complete; no mid-sentence cutoff |
+| WindowGroup spawns multiple instances (Pitfall 1) | Main window phase — scene type selection | Open window twice; confirm only one window exists |
+| Window appears behind other apps (Pitfall 2) | Main window phase — menu bar open action | Open window while another app is focused; confirm window receives focus |
+| NavigationSplitView selection not bound (Pitfall 3) | Main window / sidebar phase — List setup | Click any meeting row; confirm row is highlighted and stays highlighted |
+| Live transcript blocks main thread (Pitfall 4) | Main window / live transcript phase | Profile in Instruments during active recording; confirm no main thread spikes |
+| Full-text search blocks main thread (Pitfall 5) | Search phase — SearchService architecture | Run search with 50 meetings; confirm UI stays responsive |
+| PDF export clips at one page (Pitfall 6) | PDF export phase — export strategy selection | Export 90-min meeting PDF; confirm multi-page output |
+| `.prominentDetail` silent no-op on macOS (Pitfall 7) | Main window / navigation phase — style modifier audit | Test detail-only mode on macOS; confirm sidebar actually collapses |
 
 ---
 
 ## Sources
 
-- [Slack Incoming Webhooks — Official Docs](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/) — channel locking behavior, payload format
-- [Slack Block Kit Blocks Reference](https://docs.slack.dev/reference/block-kit/blocks/) — character limits per block type
-- [Slack Changelog: Truncating Really Long Messages (2018)](https://api.slack.com/changelog/2018-04-truncating-really-long-messages) — 40K character limit origin
-- [ACM PACMHCI: LLM-powered Meeting Recap System (2025)](https://dl.acm.org/doi/10.1145/3711074) — 22% action item capture rate, hallucination patterns
-- [OpenRouter Structured Outputs Guide](https://openrouter.ai/docs/guides/features/structured-outputs) — Response Healing streaming limitation
-- [OpenRouter Response Healing Announcement](https://openrouter.ai/announcements/response-healing-reduce-json-defects-by-80percent) — non-streaming only
-- Codebase direct analysis: `NotesEngine.swift` (60K truncation strategy), `AppCoordinator.swift` (finalization pipeline), `OpenRouterClient.swift` (streaming vs non-streaming), `MicCapture.swift` (engine lifecycle), `SystemAudioCapture.swift` (process tap lifecycle), `AppSettings.swift` (Keychain pattern for API keys)
+- [Peter Steinberger: Showing Settings from macOS Menu Bar Items — A 5-Hour Journey (2025)](https://steipete.me/posts/2025/showing-settings-from-macos-menu-bar-items) — activation policy juggling, timing issues, `openSettings` regression on macOS 26
+- [SwiftUI for Mac 2025 — TrozWare](https://troz.net/post/2025/swiftui-mac-2025/) — current state of SwiftUI macOS, `List` performance with 10K+ items
+- [Apple Developer Forums: SwiftUI NavigationSplitView on macOS](https://developer.apple.com/forums/thread/746611) — selection binding requirements and known issues
+- [Why Every NavigationSplitView Tutorial Failed Me — Medium](https://medium.com/@careful_celadon_goldfish_904/why-every-navigation-split-view-tutorial-failed-me-and-how-i-fixed-it-32a0bbeb16c2) — missing selection binding, layout vertical-space bug
+- [Apple Developer Forums: Multipage PDF with PDFKit on macOS](https://developer.apple.com/forums/thread/712377) — pagination management, NSPrintOperation path
+- [Eclectic Light: SwiftUI on macOS — text, rich text, markdown, HTML and PDF views (2024)](https://eclecticlight.co/2024/05/07/swiftui-on-macos-text-rich-text-markdown-html-and-pdf-views/) — `PDFView` inside ScrollView incompatibility
+- [Apple Developer Forums: In macOS App, ImageRenderer writes…](https://developer.apple.com/forums/thread/736400) — `ImageRenderer` single-page and environment isolation limitations
+- [Creating a Debounced Search Context for Performant SwiftUI Searches (2025)](https://danielsaidi.com/blog/2025/01/08/creating-a-debounced-search-context-for-performant-swiftui-searches) — debounce implementation pattern
+- [Exploring SwiftUI Learnings and Bugs with .searchable — Medium](https://medium.com/@snowham/exploring-swiftui-learnings-and-bugs-with-searchable-c5110995c80e) — `.searchable` resource leak and cancellation issues
+- [Scenes Types in a SwiftUI Mac App — NilCoalescing](https://nilcoalescing.com/blog/ScenesTypesInASwiftUIMacApp/) — `Window` vs `WindowGroup` single-instance behavior
+- [Fine-Tuning macOS App Activation Behavior — artlasovsky.com](https://artlasovsky.com/fine-tuning-macos-app-activation-behavior) — activation policy `.accessory` vs `.regular` window focus behavior
 
 ---
-*Pitfalls research for: macOS meeting transcription — auto-summary, solo mode, Slack integration (OpenOats fork)*
+*Pitfalls research for: macOS app window milestone — main window, NavigationSplitView, full-text search, PDF export (OpenOats fork / MeetingScribe)*
 *Researched: 2026-03-21*
