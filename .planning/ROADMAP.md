@@ -47,11 +47,11 @@ Plans:
   2. Sidebar lists all past meetings in date sections (Today / Yesterday / Last 7 days / Earlier) with date, title, duration, and meeting type badge
   3. Clicking a meeting selects it with system highlight; the detail pane shows a placeholder state (wired in Phase 3)
   4. Main window gains focus correctly and does not appear behind other running apps
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Window scene + activation policy (WIN-06, WIN-07)
-- [ ] 02-02: NavigationSplitView root + MeetingSidebarView with date grouping (WIN-01, WIN-02, WIN-03, WIN-05)
+- [ ] 02-01-PLAN.md — App rename to Papyrus + MainAppView window scene (WIN-06, WIN-07)
+- [ ] 02-02-PLAN.md — MeetingSidebarView date grouping + DetailRouter placeholder (WIN-01, WIN-02, WIN-03, WIN-05)
 
 ---
 
