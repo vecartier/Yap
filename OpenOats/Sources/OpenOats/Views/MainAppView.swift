@@ -12,16 +12,10 @@ struct MainAppView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            // MeetingSidebarView wired in Plan 02
-            Text("Sidebar — coming in Plan 02")
+            MeetingSidebarView(selectedSessionID: $selectedSessionID)
                 .frame(minWidth: 220)
         } detail: {
-            // DetailRouter wired in Plan 02
-            ContentUnavailableView(
-                "Select a Meeting",
-                systemImage: "waveform",
-                description: Text("Choose a meeting from the sidebar.")
-            )
+            DetailRouter(selectedSessionID: $selectedSessionID, settings: settings)
         }
         .navigationSplitViewStyle(.balanced)
         .onAppear {
