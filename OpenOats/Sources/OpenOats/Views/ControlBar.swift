@@ -10,6 +10,9 @@ struct ControlBar: View {
     let needsDownload: Bool
     let onToggle: () -> Void
     let onConfirmDownload: () -> Void
+    let onStartCall: () -> Void
+    let onStartSoloMemo: () -> Void
+    let onStartSoloRoom: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,10 +60,10 @@ struct ControlBar: View {
             }
 
             HStack(spacing: 10) {
-                Button(action: onToggle) {
-                    HStack(spacing: 6) {
-                        if isRunning {
-                            // Pulsing dot when live
+                if isRunning {
+                    // Stop button when session is live
+                    Button(action: onToggle) {
+                        HStack(spacing: 6) {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 8, height: 8)
@@ -70,31 +73,42 @@ struct ControlBar: View {
                             Text("Live")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(.primary)
-                        } else {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white)
-
-                            Text("Start")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.white)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        // Avoid hover-driven local state here. On macOS 26 / Swift 6.2,
+                        // switching this button from Start to Live while the pointer is
+                        // over it can trip a SwiftUI executor crash in onHover handling.
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(Capsule())
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    // Avoid hover-driven local state here. On macOS 26 / Swift 6.2,
-                    // switching this button from Start to Live while the pointer is
-                    // over it can trip a SwiftUI executor crash in onHover handling.
-                    .background(isRunning ? Color.green.opacity(0.1) : Color.accentColor)
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("app.controlBar.toggle")
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("app.controlBar.toggle")
 
-                // Audio level bars when running
-                if isRunning {
                     AudioLevelView(level: audioLevel)
                         .frame(width: 40, height: 14)
+                } else {
+                    // Three start buttons when idle
+                    Button("Start Call") {
+                        onStartCall()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("app.startCallButton")
+
+                    Button("Solo (memo)") {
+                        onStartSoloMemo()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("app.startSoloMemoButton")
+
+                    Button("Solo (room)") {
+                        onStartSoloRoom()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .accessibilityIdentifier("app.startSoloRoomButton")
                 }
 
                 Spacer()

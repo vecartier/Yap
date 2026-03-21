@@ -5,6 +5,9 @@ struct ContentView: View {
     private enum ControlBarAction {
         case toggle
         case confirmDownload
+        case startCall
+        case startSoloMemo
+        case startSoloRoom
     }
 
     private struct ViewState {
@@ -34,6 +37,7 @@ struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
     @State private var showConsentSheet = false
+    @State private var pendingSessionMode: MeetingMode = .call
     @State private var audioLevel: Float = 0
     @State private var viewState = ViewState()
     @State private var pendingControlBarAction: ControlBarAction?
@@ -181,6 +185,15 @@ struct ContentView: View {
                 },
                 onConfirmDownload: {
                     pendingControlBarAction = .confirmDownload
+                },
+                onStartCall: {
+                    pendingControlBarAction = .startCall
+                },
+                onStartSoloMemo: {
+                    pendingControlBarAction = .startSoloMemo
+                },
+                onStartSoloRoom: {
+                    pendingControlBarAction = .startSoloRoom
                 }
             )
         }
@@ -221,7 +234,7 @@ struct ContentView: View {
         }
         .onChange(of: showConsentSheet) { _, isShowing in
             if !isShowing && settings.hasAcknowledgedRecordingConsent && !viewState.isRunning {
-                startSession()
+                startSession(mode: pendingSessionMode)
             }
         }
         .task {
@@ -275,16 +288,28 @@ struct ContentView: View {
 
     // MARK: - Actions
 
-    private func startSession() {
+    private func startSession(mode: MeetingMode = .call) {
         // Gate recording behind consent acknowledgment
         guard settings.hasAcknowledgedRecordingConsent else {
+            pendingSessionMode = mode
             withAnimation(.easeInOut(duration: 0.25)) {
                 showConsentSheet = true
             }
             return
         }
 
-        coordinator.handle(.userStarted(.manual()), settings: settings)
+        let metadata: MeetingMetadata = mode == .call
+            ? .manual()
+            : .solo(mode)
+        coordinator.handle(.userStarted(metadata), settings: settings)
+    }
+
+    private func speakerLabel(for speaker: Speaker) -> String {
+        switch speaker {
+        case .you:  return "You"
+        case .them: return "Them"
+        case .room: return "Room"
+        }
     }
 
     private func stopSession() {
@@ -302,7 +327,7 @@ struct ContentView: View {
         let timeFmt = DateFormatter()
         timeFmt.dateFormat = "HH:mm:ss"
         let lines = viewState.utterances.map { u in
-            "[\(timeFmt.string(from: u.timestamp))] \(u.speaker == .you ? "You" : "Them"): \(u.displayText)"
+            "[\(timeFmt.string(from: u.timestamp))] \(speakerLabel(for: u.speaker)): \(u.displayText)"
         }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(lines.joined(separator: "\n"), forType: .string)
@@ -343,7 +368,7 @@ struct ContentView: View {
         // Persist to transcript log
         Task {
             await coordinator.transcriptLogger?.append(
-                speaker: last.speaker == .you ? "You" : "Them",
+                speaker: speakerLabel(for: last.speaker),
                 text: last.text,
                 timestamp: last.timestamp
             )
@@ -487,11 +512,17 @@ struct ContentView: View {
             if viewState.isRunning {
                 stopSession()
             } else {
-                startSession()
+                startSession(mode: .call)
             }
         case .confirmDownload:
             coordinator.transcriptionEngine?.downloadConfirmed = true
-            startSession()
+            startSession(mode: .call)
+        case .startCall:
+            startSession(mode: .call)
+        case .startSoloMemo:
+            startSession(mode: .soloMemo)
+        case .startSoloRoom:
+            startSession(mode: .soloRoom)
         }
     }
 }

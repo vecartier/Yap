@@ -112,6 +112,9 @@ final class TranscriptionEngine {
     /// Tracks the resolved mic device ID currently in use.
     private var currentMicDeviceID: AudioDeviceID = 0
 
+    /// Tracks the meeting mode for the current session (used by mic restarts).
+    private var currentMeetingMode: MeetingMode = .call
+
     /// Tracks whether user selected "System Default" (0) or a specific device.
     private var userSelectedDeviceID: AudioDeviceID = 0
 
@@ -148,11 +151,13 @@ final class TranscriptionEngine {
     func start(
         locale: Locale,
         inputDeviceID: AudioDeviceID = 0,
-        transcriptionModel: TranscriptionModel
+        transcriptionModel: TranscriptionModel,
+        meetingMode: MeetingMode = .call  // default preserves existing call mode behavior
     ) async {
         diagLog("[ENGINE-0] start() called, isRunning=\(isRunning)")
         guard !isRunning else { return }
         lastError = nil
+        currentMeetingMode = meetingMode
         refreshModelAvailability()
 
         if case .scripted(let scriptedUtterances) = mode {
@@ -258,7 +263,8 @@ final class TranscriptionEngine {
             locale: locale,
             vadManager: vadManager,
             deviceID: targetMicID,
-            echoCancellation: useAEC
+            echoCancellation: useAEC,
+            micSpeaker: meetingMode.micSpeaker
         )
 
         // Check for immediate mic capture failure
@@ -283,7 +289,8 @@ final class TranscriptionEngine {
                         locale: locale,
                         vadManager: vadManager,
                         deviceID: targetMicID,
-                        echoCancellation: false
+                        echoCancellation: false,
+                        micSpeaker: meetingMode.micSpeaker
                     )
                 } else {
                     diagLog("[ENGINE-HEALTH] no mic audio after 5s")
@@ -292,8 +299,10 @@ final class TranscriptionEngine {
             }
         }
 
-        // 3. Start system audio capture
-        await startSystemAudioStream(locale: locale, vadManager: vadManager)
+        // 3. Start system audio capture — skipped in solo modes (soloMemo, soloRoom)
+        if meetingMode.capturesSystemAudio {
+            await startSystemAudioStream(locale: locale, vadManager: vadManager)
+        }
 
         assetStatus = "Transcribing (\(micBackend?.displayName ?? transcriptionModel.displayName))"
         diagLog("[ENGINE-6] all transcription tasks started")
@@ -536,7 +545,8 @@ final class TranscriptionEngine {
         startMicStream(
             locale: settings.locale,
             vadManager: vadManager,
-            deviceID: targetMicID
+            deviceID: targetMicID,
+            micSpeaker: currentMeetingMode.micSpeaker
         )
         currentMicDeviceID = targetMicID
         lastError = nil
@@ -587,7 +597,8 @@ final class TranscriptionEngine {
         locale: Locale,
         vadManager: VadManager,
         deviceID: AudioDeviceID,
-        echoCancellation: Bool = false
+        echoCancellation: Bool = false,
+        micSpeaker: Speaker = .you
     ) {
         var micStream = micCapture.bufferStream(deviceID: deviceID, echoCancellation: echoCancellation)
         if let recorder = audioRecorder {
@@ -598,7 +609,7 @@ final class TranscriptionEngine {
         let store = transcriptStore
         guard let micTranscriber = makeTranscriber(
             locale: locale,
-            speaker: .you,
+            speaker: micSpeaker,
             vadManager: vadManager,
             onPartial: { text in
                 Task { @MainActor in store.volatileYouText = text }
@@ -606,7 +617,7 @@ final class TranscriptionEngine {
             onFinal: { text in
                 Task { @MainActor in
                     store.volatileYouText = ""
-                    store.append(Utterance(text: text, speaker: .you))
+                    store.append(Utterance(text: text, speaker: micSpeaker))
                 }
             }
         ) else {

@@ -232,7 +232,8 @@ final class AppCoordinator {
             await transcriptionEngine?.start(
                 locale: settings.locale,
                 inputDeviceID: settings.inputDeviceID,
-                transcriptionModel: settings.transcriptionModel
+                transcriptionModel: settings.transcriptionModel,
+                meetingMode: metadata.mode
             )
         }
 
