@@ -27,11 +27,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Solo mode transcript uses single-speaker labeling and is saved in the same format as call transcripts
   3. Knowledge base UI elements are absent from settings and main views
   4. VoyageAI and Ollama embed client code is removed from the codebase
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Remove knowledge base feature (UI, codebase, embed dependencies)
-- [ ] 01-02: Add solo mode with MeetingMode enum and mic-only session path
+- [ ] 01-01-PLAN.md — Remove knowledge base feature (delete 6 files, scrub KB references from 6 source files)
+- [ ] 01-02-PLAN.md — Add solo mode with MeetingMode enum, Speaker.room, mode-aware TranscriptionEngine, and three-button menu bar UI
 
 ### Phase 2: Summary Engine
 **Goal**: Every session end automatically produces a structured, saved summary
