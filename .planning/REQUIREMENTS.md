@@ -16,9 +16,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Cleanup
 
-- [ ] **CLEAN-01**: Knowledge base feature (KB indexing, embedding, real-time suggestions) is removed from codebase
-- [ ] **CLEAN-02**: KB-related UI elements are removed from settings and main views
-- [ ] **CLEAN-03**: Voyage AI and Ollama embed client dependencies are removed if only used by KB
+- [x] **CLEAN-01**: Knowledge base feature (KB indexing, embedding, real-time suggestions) is removed from codebase
+- [x] **CLEAN-02**: KB-related UI elements are removed from settings and main views
+- [x] **CLEAN-03**: Voyage AI and Ollama embed client dependencies are removed if only used by KB
 
 ### Summary
 
@@ -92,9 +92,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SOLO-02 | Phase 1 | Pending |
 | SOLO-03 | Phase 1 | Pending |
 | SOLO-04 | Phase 1 | Pending |
-| CLEAN-01 | Phase 1 | Pending |
-| CLEAN-02 | Phase 1 | Pending |
-| CLEAN-03 | Phase 1 | Pending |
+| CLEAN-01 | Phase 1 | Complete |
+| CLEAN-02 | Phase 1 | Complete |
+| CLEAN-03 | Phase 1 | Complete |
 | SUMM-01 | Phase 2 | Pending |
 | SUMM-02 | Phase 2 | Pending |
 | SUMM-03 | Phase 2 | Pending |

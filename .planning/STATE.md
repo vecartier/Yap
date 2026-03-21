@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-21T12:19:59.325Z"
+stopped_at: Completed 01-foundation-01-01-PLAN.md
+last_updated: "2026-03-21T12:32:08.764Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -24,26 +24,26 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Position
 
 Phase: 01 (foundation) — EXECUTING
-Plan: 1 of 2
+Plan: 2 of 2 (next)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 10 min
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation | 1 | 10 min | 10 min |
 
 **Recent Trend:**
 
-- Last 5 plans: none yet
-- Trend: -
+- Last 5 plans: 01-01 (10 min)
+- Trend: baseline
 
 *Updated after each plan completion*
 
@@ -59,6 +59,8 @@ Recent decisions affecting current work:
 - Project: Strip knowledge base before adding new features (clean diff)
 - Project: MeetingMode enum with factory-method initialization (not skipSystemAudio flag)
 - Project: Summary hooks into AppCoordinator after awaitPendingWrites(), not from UI
+- [Phase 01-foundation]: Remove KB types from SessionRecord entirely; old JSONL files decode cleanly via Codable ignoring unknown keys
+- [Phase 01-foundation]: Add removeStaleKBKeychainEntriesIfNeeded migration to clean voyageApiKey and openAIEmbedApiKey from Keychain
 
 ### Pending Todos
 
@@ -71,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T11:20:43.704Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-foundation/01-CONTEXT.md
+Last session: 2026-03-21T12:32:08.759Z
+Stopped at: Completed 01-foundation-01-01-PLAN.md
+Resume file: None
