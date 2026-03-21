@@ -7,14 +7,14 @@
 
 Requirements for initial release. Each maps to roadmap phases.
 
-### Solo Mode
+### Solo Mode (Phase 1 — Complete)
 
 - [x] **SOLO-01**: User can start a mic-only recording session for in-person meetings via menu bar
 - [x] **SOLO-02**: User can start a mic-only recording session for personal voice memos via menu bar
 - [x] **SOLO-03**: Solo mode produces a timestamped transcript identical in format to call transcripts
 - [x] **SOLO-04**: Solo mode uses single-speaker labeling (no "them" speaker)
 
-### Cleanup
+### Cleanup (Phase 1 — Complete)
 
 - [x] **CLEAN-01**: Knowledge base feature (KB indexing, embedding, real-time suggestions) is removed from codebase
 - [x] **CLEAN-02**: KB-related UI elements are removed from settings and main views
@@ -32,55 +32,88 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SUMM-08**: Summary works with both OpenRouter (cloud) and Ollama (local) providers
 - [ ] **SUMM-09**: Summary is saved as Markdown alongside the transcript in ~/Documents/OpenOats/
 
+### Main App Window
+
+- [ ] **WIN-01**: App has a main window with NavigationSplitView (sidebar + detail layout)
+- [ ] **WIN-02**: Sidebar shows chronological meeting list with date, title, duration, meeting type
+- [ ] **WIN-03**: Sidebar groups meetings by date sections (Today / Yesterday / Last 7 days / Earlier)
+- [ ] **WIN-04**: Clicking a meeting shows Granola-style unified detail: summary at top, transcript below
+- [ ] **WIN-05**: Detail pane shows meeting metadata (date, time, duration, type)
+- [ ] **WIN-06**: Main window uses singleton `Window` scene (not `WindowGroup`)
+- [ ] **WIN-07**: Activation policy flips between .accessory and .regular when showing/hiding main window
+
+### Live Recording
+
+- [ ] **LIVE-01**: During recording, live transcript appears in the main window detail pane (not menu bar)
+- [ ] **LIVE-02**: Sidebar shows synthetic "Live Session" row pinned at top during recording
+- [ ] **LIVE-03**: When recording stops, detail auto-navigates to the completed session
+- [ ] **LIVE-04**: DetailRouter routes between live view and past meeting view based on state
+
+### Menu Bar
+
+- [ ] **MENU-01**: Menu bar popover shows only: recording status, start/stop buttons, "Open MeetingScribe" link
+- [ ] **MENU-02**: Live transcript is removed from menu bar popover
+- [ ] **MENU-03**: ContentView.swift and NotesView.swift are removed (logic migrated to main window)
+
 ### Slack Message
 
 - [ ] **SLCK-01**: Summary is formatted as a Slack-ready message (Markdown with clear sections)
 - [ ] **SLCK-02**: Slack message includes header, key decisions, action items, discussion points, open questions
-- [ ] **SLCK-03**: Message is optimized for readability when pasted into Slack
+- [ ] **SLCK-03**: Copy-to-clipboard button for Slack message in meeting detail pane
 
-### Share UI
+### Search
 
-- [ ] **SHARE-01**: Post-meeting share screen appears after summary generation
-- [ ] **SHARE-02**: Share screen displays formatted summary (read-only)
-- [ ] **SHARE-03**: Share screen has "Copy to Clipboard" button for Slack-formatted message
-- [ ] **SHARE-04**: Share screen has "Save & Close" button
-- [ ] **SHARE-05**: Share screen is a separate window (not crammed into menu bar popover)
+- [ ] **SRCH-01**: Full-text search across all past transcripts and summaries
+- [ ] **SRCH-02**: Search runs on background thread with debounce (not blocking UI)
+- [ ] **SRCH-03**: Search filters the sidebar meeting list in real-time
+
+### Export
+
+- [ ] **EXPRT-01**: User can export a meeting to PDF (summary + transcript)
+- [ ] **EXPRT-02**: PDF uses NSPrintOperation for proper multi-page pagination (not ImageRenderer)
+
+### Settings
+
+- [ ] **SETT-01**: Settings accessible as a tab/section in the main window sidebar
+- [ ] **SETT-02**: Settings include: LLM provider, transcription model, API keys, audio input device
 
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
 
-### Slack Webhook Integration
+### Calendar Integration
 
-- **SLCK2-01**: User can configure named Slack webhook URLs in settings
-- **SLCK2-02**: Webhook URLs stored in macOS Keychain
-- **SLCK2-03**: Slack Block Kit formatting for richer messages
-- **SLCK2-04**: Send to Slack button in share screen
-- **SLCK2-05**: Webhook picker remembers last-used webhook per meeting type
+- **CAL-01**: Calendar integration (Google Calendar / Apple Calendar)
+- **CAL-02**: 5-minute pre-meeting notification
+- **CAL-03**: Auto-launch recording when calendar meeting starts
+- **CAL-04**: Meeting title pulled from calendar event / Zoom window title
+- **CAL-05**: Participant names from calendar used in summary attribution
 
-### Enhanced Sharing
+### Slack Automation
 
-- **SHARE2-01**: User can edit summary text before sending to Slack
-- **SHARE2-02**: Meeting type context adjusts summary prompt (standup vs client call vs planning)
-- **SHARE2-03**: Summary includes a confidence indicator per section
+- **SLCK2-01**: Slack webhook auto-send to configured channel
+- **SLCK2-02**: Recurring meeting → auto-send to same Slack channel
+- **SLCK2-03**: Webhook URLs stored in macOS Keychain
 
-### Automation
+### Enhanced Features
 
-- **AUTO-01**: Option to auto-send to default webhook without review screen
-- **AUTO-02**: Slack thread replies for recurring meetings
+- **ENH-01**: Zoom .vtt transcript import as cross-reference
+- **ENH-02**: Inline transcript search (Cmd+F within transcript view)
+- **ENH-03**: Meeting type context adjusts summary prompt
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Knowledge base / note surfacing | Stripped to simplify — not core to transcript→summary→share |
-| Always-on listening | Privacy risk, battery drain, manual start is sufficient |
-| Calendar integration | App-launch detection covers 95% of cases, calendar adds scope risk |
-| Slack OAuth bot | Webhook is self-service, no admin approval needed for personal tool |
-| Speaker name diarization | System uses you/them, not real names — can't reliably promise named attribution |
-| Multi-workspace Slack | Change webhook URL to switch; simple and correct for personal tool |
-| Real-time summary during meeting | Transcript is the real-time artifact, summary is post-meeting |
+| Always-on listening | Privacy risk, battery drain |
+| Speaker diarization with names | Unreliable without calendar context |
+| Video recording | Storage nightmare, privacy issues |
+| Collaborative editing | Personal tool |
 | Mobile app | macOS only |
+| Tags/folders for meetings | Search covers the use case |
+| Inline AI chat | Structured summary is sufficient |
+| iCloud sync | Time Machine is sufficient |
+| SwiftData/Core Data | File-based storage works at personal scale |
 
 ## Traceability
 
@@ -95,29 +128,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CLEAN-01 | Phase 1 | Complete |
 | CLEAN-02 | Phase 1 | Complete |
 | CLEAN-03 | Phase 1 | Complete |
-| SUMM-01 | Phase 2 | Pending |
-| SUMM-02 | Phase 2 | Pending |
-| SUMM-03 | Phase 2 | Pending |
-| SUMM-04 | Phase 2 | Pending |
-| SUMM-05 | Phase 2 | Pending |
-| SUMM-06 | Phase 2 | Pending |
-| SUMM-07 | Phase 2 | Pending |
-| SUMM-08 | Phase 2 | Pending |
-| SUMM-09 | Phase 2 | Pending |
-| SLCK-01 | Phase 3 | Pending |
-| SLCK-02 | Phase 3 | Pending |
-| SLCK-03 | Phase 3 | Pending |
-| SHARE-01 | Phase 3 | Pending |
-| SHARE-02 | Phase 3 | Pending |
-| SHARE-03 | Phase 3 | Pending |
-| SHARE-04 | Phase 3 | Pending |
-| SHARE-05 | Phase 3 | Pending |
+| (remaining populated during roadmap creation) | | |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24
-- Unmapped: 0
+- v1 requirements: 38 total (7 complete, 31 active)
+- Mapped to phases: 7
+- Unmapped: 31 ⚠️
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after roadmap creation*
+*Last updated: 2026-03-21 after scope reframe*
