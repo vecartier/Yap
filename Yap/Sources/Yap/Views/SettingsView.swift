@@ -390,7 +390,7 @@ struct SettingsView: View {
         }
         .accessibilityIdentifier("settings.form")
         .formStyle(.grouped)
-        .frame(width: 450, height: 750)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             refreshViewState()
         }

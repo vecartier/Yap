@@ -23,9 +23,10 @@ struct DetailRouter: View {
         case .past(let id):
             PastMeetingDetailView(sessionID: id, settings: settings)
         case .settings:
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 SettingsView(settings: settings, updater: updater)
                     .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         case .empty:
             if coordinator.sessionHistory.isEmpty {

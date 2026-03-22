@@ -10,12 +10,12 @@ struct MainAppView: View {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
     @State private var columnVisibility = NavigationSplitViewVisibility.all
-    @AppStorage("selectedMeetingID") private var selectedSessionID: String?
+    @State private var selectedSessionID: String?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             MeetingSidebarView(selectedSessionID: $selectedSessionID, notesFolderPath: settings.notesFolderPath)
-                .frame(minWidth: 220)
+                .frame(minWidth: 250)
         } detail: {
             DetailRouter(selectedSessionID: $selectedSessionID, settings: settings, updater: updater)
         }

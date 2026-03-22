@@ -9,6 +9,7 @@ final class MenuBarController {
     private let coordinator: AppCoordinator
     private let settings: AppSettings
     private var iconUpdateTask: Task<Void, Never>?
+    private var eventMonitor: Any?
 
     var onShowMainWindow: (() -> Void)?
     var onQuitApp: (() -> Void)?
@@ -53,9 +54,20 @@ final class MenuBarController {
 
     @objc private func togglePopover(_ sender: Any?) {
         if popover.isShown {
-            popover.performClose(sender)
+            closePopover()
         } else if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                self?.closePopover()
+            }
+        }
+    }
+
+    private func closePopover() {
+        popover.performClose(nil)
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
 
