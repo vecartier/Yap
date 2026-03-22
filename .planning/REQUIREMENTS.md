@@ -63,9 +63,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Search
 
-- [ ] **SRCH-01**: Full-text search across all past transcripts and summaries
-- [ ] **SRCH-02**: Search runs on background thread with debounce (not blocking UI)
-- [ ] **SRCH-03**: Search filters the sidebar meeting list in real-time
+- [x] **SRCH-01**: Full-text search across all past transcripts and summaries
+- [x] **SRCH-02**: Search runs on background thread with debounce (not blocking UI)
+- [x] **SRCH-03**: Search filters the sidebar meeting list in real-time
 
 ### Export
 
@@ -156,9 +156,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SUMM-09 | Phase 5 | Complete |
 | SETT-01 | Phase 5 | Complete |
 | SETT-02 | Phase 5 | Complete |
-| SRCH-01 | Phase 6 | Pending |
-| SRCH-02 | Phase 6 | Pending |
-| SRCH-03 | Phase 6 | Pending |
+| SRCH-01 | Phase 6 | Complete |
+| SRCH-02 | Phase 6 | Complete |
+| SRCH-03 | Phase 6 | Complete |
 | EXPRT-01 | Phase 6 | Complete |
 | EXPRT-02 | Phase 6 | Complete |
 

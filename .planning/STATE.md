@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-22T14:24:56.784Z"
+stopped_at: Completed 06-search-export-01-PLAN.md
+last_updated: "2026-03-22T14:34:53.139Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 12
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -55,6 +55,7 @@ Plan: 1 of 2
 | Phase 05-summary-engine-settings P01 | 9 | 2 tasks | 5 files |
 | Phase 05-summary-engine-settings P02 | 5 | 2 tasks | 5 files |
 | Phase 06-search-export P02 | 12 | 2 tasks | 2 files |
+| Phase 06-search-export P01 | 21 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase 05-summary-engine-settings]: retrySummary() converts [SessionRecord] to [Utterance] inline — loadTranscript returns SessionRecord but requestSummaryRetry accepts Utterance; matching fields allow simple map
 - [Phase 05-summary-engine-settings]: CommandGroup(replacing: .appSettings) removes system Settings menu item — prevents duplicate Settings entries now that SettingsView lives in main window detail pane
 - [Phase 06-search-export]: PDFExporter.export() is @MainActor — NSPrintOperation requires main actor in Swift 6; pdfOperation takes NSMutableData not URL; .automatic pagination (not .auto)
+- [Phase 06-search-export]: SearchService is a bare actor with MainActor.run for result delivery — no @Observable needed for search results
+- [Phase 06-search-export]: notesFolderPath passed as explicit parameter to MeetingSidebarView — AppSettings not in environment; explicit passing is established project convention
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T14:24:56.761Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-22T14:34:53.135Z
+Stopped at: Completed 06-search-export-01-PLAN.md
 Resume file: None
