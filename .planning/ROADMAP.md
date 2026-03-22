@@ -83,8 +83,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: LiveDetailView + MeetingListItem enum + DetailRouter live branch (LIVE-01, LIVE-02, LIVE-03, LIVE-04)
-- [ ] 04-02: Menu bar popover cleanup + legacy view deletion (MENU-01, MENU-02, MENU-03)
+- [ ] 04-01-PLAN.md — LiveDetailView + MeetingListItem enum + DetailRouter live branch + MainAppView hooks (LIVE-01, LIVE-02, LIVE-03, LIVE-04)
+- [ ] 04-02-PLAN.md — Menu bar popover 3-button idle state + legacy view deletion (MENU-01, MENU-02, MENU-03)
 
 ---
 
