@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-22T08:58:48.472Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-22T09:19:04.974Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Every meeting produces a clear, shareable record without manual note-taking
-**Current focus:** Phase 03 — past-meeting-detail
+**Current focus:** Phase 04 — live-recording-menu-bar-cleanup
 
 ## Current Position
 
-Phase: 03 (past-meeting-detail) — EXECUTING
+Phase: 04 (live-recording-menu-bar-cleanup) — EXECUTING
 Plan: 1 of 2
 
 ## Performance Metrics
@@ -50,6 +50,7 @@ Plan: 1 of 2
 | Phase 02-window-scaffold P01 | 3 | 2 tasks | 4 files |
 | Phase 03-past-meeting-detail P01 | 2 | 2 tasks | 3 files |
 | Phase 03-past-meeting-detail P02 | 2 | 3 tasks | 3 files |
+| Phase 04-live-recording-menu-bar-cleanup P01 | 5 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Recent decisions affecting current work:
 - [Phase 03-past-meeting-detail]: Private helpers (formattedDate, formattedDuration, meetingType) moved into PastMeetingDetailView — only needed by the detail view after Phase 3
 - [Phase 03-past-meeting-detail]: Speaker.room renders as 'Room' with Color.secondary — reuses existing color token without introducing a new one
 - [Phase 03-past-meeting-detail]: Slack copy button disabled with .help('Summary required') — exact placeholder for Phase 5 integration point
+- [Phase 04-live-recording-menu-bar-cleanup]: SessionIndex/TemplateSnapshot gained Equatable+Hashable to enable onChange(of: lastEndedSession) and MeetingListItem synthesis
+- [Phase 04-live-recording-menu-bar-cleanup]: isFinalizing checks coordinator.state directly (not isRecording) — .ending returns false for isRecording, must check state directly to keep LiveDetailView visible during finalization
+- [Phase 04-live-recording-menu-bar-cleanup]: _live_ sentinel string is sole routing signal in DetailRouter — not coordinator.isRecording — Finalizing state stays on LiveDetailView
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T08:58:48.462Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-live-recording-menu-bar-cleanup/04-CONTEXT.md
+Last session: 2026-03-22T09:19:04.971Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

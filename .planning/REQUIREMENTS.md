@@ -44,10 +44,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Live Recording
 
-- [ ] **LIVE-01**: During recording, live transcript appears in the main window detail pane (not menu bar)
-- [ ] **LIVE-02**: Sidebar shows synthetic "Live Session" row pinned at top during recording
-- [ ] **LIVE-03**: When recording stops, detail auto-navigates to the completed session
-- [ ] **LIVE-04**: DetailRouter routes between live view and past meeting view based on state
+- [x] **LIVE-01**: During recording, live transcript appears in the main window detail pane (not menu bar)
+- [x] **LIVE-02**: Sidebar shows synthetic "Live Session" row pinned at top during recording
+- [x] **LIVE-03**: When recording stops, detail auto-navigates to the completed session
+- [x] **LIVE-04**: DetailRouter routes between live view and past meeting view based on state
 
 ### Menu Bar
 
@@ -138,10 +138,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLCK-01 | Phase 3 | Complete |
 | SLCK-02 | Phase 3 | Complete |
 | SLCK-03 | Phase 3 | Complete |
-| LIVE-01 | Phase 4 | Pending |
-| LIVE-02 | Phase 4 | Pending |
-| LIVE-03 | Phase 4 | Pending |
-| LIVE-04 | Phase 4 | Pending |
+| LIVE-01 | Phase 4 | Complete |
+| LIVE-02 | Phase 4 | Complete |
+| LIVE-03 | Phase 4 | Complete |
+| LIVE-04 | Phase 4 | Complete |
 | MENU-01 | Phase 4 | Pending |
 | MENU-02 | Phase 4 | Pending |
 | MENU-03 | Phase 4 | Pending |

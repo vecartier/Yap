@@ -131,6 +131,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation | 2/2 | Complete | 2026-03-21 |
 | 2. Window Scaffold | 2/2 | Complete | 2026-03-21 |
 | 3. Past Meeting Detail | 2/2 | Complete   | 2026-03-21 |
-| 4. Live Recording + Menu Bar Cleanup | 0/2 | Not started | - |
+| 4. Live Recording + Menu Bar Cleanup | 1/2 | In Progress|  |
 | 5. Summary Engine + Settings | 0/2 | Not started | - |
 | 6. Search + Export | 0/2 | Not started | - |
