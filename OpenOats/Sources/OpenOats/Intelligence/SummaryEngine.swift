@@ -77,7 +77,7 @@ actor SummaryEngine {
     /// Returns a PersistedSummary on success. Throws on unrecoverable failure.
     func generate(
         sessionID: String,
-        records: [SessionRecord],
+        records: [Utterance],
         session: SessionIndex?,
         config: ProviderConfig
     ) async throws -> PersistedSummary {
@@ -129,7 +129,7 @@ actor SummaryEngine {
     @MainActor
     func generate(
         sessionID: String,
-        records: [SessionRecord],
+        records: [Utterance],
         session: SessionIndex?,
         settings: AppSettings
     ) async throws -> PersistedSummary {
@@ -168,7 +168,7 @@ actor SummaryEngine {
 
     // MARK: - Private Helpers
 
-    private func formatTranscript(_ records: [SessionRecord]) -> String {
+    private func formatTranscript(_ records: [Utterance]) -> String {
         // Cap at ~60,000 characters. Keep first third + last third (drop middle).
         let lines = records.map { r -> String in
             let speaker = speakerLabel(r.speaker)

@@ -55,6 +55,17 @@ final class AppCoordinator {
         set { withMutation(keyPath: \.lastEndedSession) { _lastEndedSession = newValue } }
     }
 
+    // MARK: - Summary State
+
+    @ObservationIgnored private let _summaryEngine = SummaryEngine()
+    nonisolated var summaryEngine: SummaryEngine { _summaryEngine }
+
+    @ObservationIgnored nonisolated(unsafe) private var _summaryCache: [String: SummaryState] = [:]
+    var summaryCache: [String: SummaryState] {
+        get { access(keyPath: \.summaryCache); return _summaryCache }
+        set { withMutation(keyPath: \.summaryCache) { _summaryCache = newValue } }
+    }
+
     @ObservationIgnored nonisolated(unsafe) private var _pendingExternalCommand: ExternalCommandRequest?
     var pendingExternalCommand: ExternalCommandRequest? {
         get { access(keyPath: \.pendingExternalCommand); return _pendingExternalCommand }
@@ -263,8 +274,19 @@ final class AppCoordinator {
         let utterancesSnapshot = transcriptStore.utterances
         await sessionStore.backfillRefinedText(from: utterancesSnapshot)
 
-        // 3. Build sidecar from this session's transcript data
+        // 2c. Capture session ID and snapshot records NOW before endSession() clears them.
+        // sessionID was previously computed at step 3; moved here so generateSummary has it.
         let sessionID = await sessionStore.currentSessionID ?? "unknown"
+
+        // 2d. Trigger summary generation non-blocking (runs in background while finalization continues)
+        let summaryRecords = transcriptStore.utterances
+        if let settings {
+            Task {
+                await self.generateSummary(sessionID: sessionID, records: summaryRecords, settings: settings)
+            }
+        }
+
+        // 3. Build sidecar from this session's transcript data
         let utteranceCount = transcriptStore.utterances.count
         let title = transcriptStore.conversationState.currentTopic.isEmpty
             ? nil : transcriptStore.conversationState.currentTopic
@@ -334,6 +356,35 @@ final class AppCoordinator {
     /// Load session history from sidecars (lightweight index only).
     func loadHistory() async {
         sessionHistory = await sessionStore.loadSessionIndex()
+    }
+
+    private func generateSummary(sessionID: String, records: [Utterance], settings: AppSettings) async {
+        summaryCache[sessionID] = .loading
+
+        do {
+            let session = sessionHistory.first { $0.id == sessionID }
+            let summary = try await summaryEngine.generate(
+                sessionID: sessionID,
+                records: records,
+                session: session,
+                settings: settings
+            )
+
+            // Persist to disk as Markdown alongside transcript ({sessionID}-summary.md)
+            let outputDir = URL(fileURLWithPath: settings.notesFolderPath)
+            let summaryURL = outputDir.appendingPathComponent("\(sessionID)-summary.md")
+            let markdownText = SummaryEngine.markdownString(for: summary)
+            try? markdownText.write(to: summaryURL, atomically: true, encoding: .utf8)
+
+            summaryCache[sessionID] = .ready(summary)
+        } catch {
+            summaryCache[sessionID] = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Public wrapper for retry from PastMeetingDetailView.
+    func requestSummaryRetry(sessionID: String, records: [Utterance], settings: AppSettings) async {
+        await generateSummary(sessionID: sessionID, records: records, settings: settings)
     }
 
     func queueExternalCommand(_ command: ExternalCommand) {
