@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenOats",
+    name: "Yap",
     platforms: [.macOS(.v15)],
     products: [
         .library(
@@ -11,7 +11,7 @@ let package = Package(
             targets: ["OpenOatsKit"]
         ),
         .executable(
-            name: "OpenOats",
+            name: "Yap",
             targets: ["OpenOatsAppExecutable"]
         ),
     ],
@@ -30,18 +30,18 @@ let package = Package(
                 .product(name: "WhisperKit", package: "WhisperKit"),
                 .product(name: "LaunchAtLogin", package: "LaunchAtLogin-Modern"),
             ],
-            path: "Sources/OpenOats",
+            path: "Sources/Yap",
             exclude: ["Info.plist", "OpenOats.entitlements", "Assets", "Resources"]
         ),
         .executableTarget(
             name: "OpenOatsAppExecutable",
             dependencies: ["OpenOatsKit"],
-            path: "Sources/OpenOatsApp"
+            path: "Sources/YapApp"
         ),
         .testTarget(
             name: "OpenOatsTests",
             dependencies: ["OpenOatsKit"],
-            path: "Tests/OpenOatsTests"
+            path: "Tests/YapTests"
         ),
     ]
 )
