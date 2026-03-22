@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-22T10:46:02.775Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-03-22T14:24:56.784Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Every meeting produces a clear, shareable record without manual note-taking
-**Current focus:** Phase 05 — summary-engine-settings
+**Current focus:** Phase 06 — search-export
 
 ## Current Position
 
-Phase: 05 (summary-engine-settings) — COMPLETE
-Plan: 2 of 2
+Phase: 06 (search-export) — EXECUTING
+Plan: 1 of 2
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: 2 of 2
 | Phase 04-live-recording-menu-bar-cleanup P02 | 6 | 2 tasks | 3 files |
 | Phase 05-summary-engine-settings P01 | 9 | 2 tasks | 5 files |
 | Phase 05-summary-engine-settings P02 | 5 | 2 tasks | 5 files |
+| Phase 06-search-export P02 | 12 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,7 @@ Recent decisions affecting current work:
 - [Phase 05-summary-engine-settings]: SPUUpdater threaded as parameter (OpenOatsRootApp -> MainAppView -> DetailRouter) — not env-injected; updaterController is a let on root app struct, not available via @Environment
 - [Phase 05-summary-engine-settings]: retrySummary() converts [SessionRecord] to [Utterance] inline — loadTranscript returns SessionRecord but requestSummaryRetry accepts Utterance; matching fields allow simple map
 - [Phase 05-summary-engine-settings]: CommandGroup(replacing: .appSettings) removes system Settings menu item — prevents duplicate Settings entries now that SettingsView lives in main window detail pane
+- [Phase 06-search-export]: PDFExporter.export() is @MainActor — NSPrintOperation requires main actor in Swift 6; pdfOperation takes NSMutableData not URL; .automatic pagination (not .auto)
 
 ### Pending Todos
 
@@ -102,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T10:46:02.754Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-search-export/06-CONTEXT.md
+Last session: 2026-03-22T14:24:56.761Z
+Stopped at: Completed 06-02-PLAN.md
+Resume file: None

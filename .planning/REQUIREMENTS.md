@@ -69,8 +69,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Export
 
-- [ ] **EXPRT-01**: User can export a meeting to PDF (summary + transcript)
-- [ ] **EXPRT-02**: PDF uses NSPrintOperation for proper multi-page pagination (not ImageRenderer)
+- [x] **EXPRT-01**: User can export a meeting to PDF (summary + transcript)
+- [x] **EXPRT-02**: PDF uses NSPrintOperation for proper multi-page pagination (not ImageRenderer)
 
 ### Settings
 
@@ -159,8 +159,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-01 | Phase 6 | Pending |
 | SRCH-02 | Phase 6 | Pending |
 | SRCH-03 | Phase 6 | Pending |
-| EXPRT-01 | Phase 6 | Pending |
-| EXPRT-02 | Phase 6 | Pending |
+| EXPRT-01 | Phase 6 | Complete |
+| EXPRT-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 38 total (7 complete, 31 active)
