@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-22T09:41:40.040Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-22T10:17:52.184Z"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Every meeting produces a clear, shareable record without manual note-taking
-**Current focus:** Phase 04 — live-recording-menu-bar-cleanup
+**Current focus:** Phase 05 — summary-engine-settings
 
 ## Current Position
 
-Phase: 04 (live-recording-menu-bar-cleanup) — EXECUTING
+Phase: 05 (summary-engine-settings) — EXECUTING
 Plan: 1 of 2
 
 ## Performance Metrics
@@ -52,6 +52,7 @@ Plan: 1 of 2
 | Phase 03-past-meeting-detail P02 | 2 | 3 tasks | 3 files |
 | Phase 04-live-recording-menu-bar-cleanup P01 | 5 | 2 tasks | 6 files |
 | Phase 04-live-recording-menu-bar-cleanup P02 | 6 | 2 tasks | 3 files |
+| Phase 05-summary-engine-settings P01 | 9 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 04-live-recording-menu-bar-cleanup]: _live_ sentinel string is sole routing signal in DetailRouter — not coordinator.isRecording — Finalizing state stays on LiveDetailView
 - [Phase 04-live-recording-menu-bar-cleanup]: ContentView.swift self-contained — all openWindow(id: 'notes') calls lived inside it; deletion required no external reference cleanup
 - [Phase 04-live-recording-menu-bar-cleanup]: Menu bar popover has no live transcript — transcript only in main window LiveDetailView
+- [Phase 05-summary-engine-settings]: SummaryEngine.generate() accepts [Utterance] not [SessionRecord] — utterances are in-memory; no extra JSONL reload needed
+- [Phase 05-summary-engine-settings]: ProviderConfig Sendable snapshot pattern: capture @MainActor AppSettings into Sendable struct before crossing actor boundary — established pattern for future actors
+- [Phase 05-summary-engine-settings]: SummaryState in SummaryState.swift (not nested in AppCoordinator) — consistent with one-type-per-file convention; accessible to tests without namespace
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T09:41:40.029Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-summary-engine-settings/05-CONTEXT.md
+Last session: 2026-03-22T10:17:52.180Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None

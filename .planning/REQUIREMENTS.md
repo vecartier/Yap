@@ -22,15 +22,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Summary
 
-- [ ] **SUMM-01**: Structured summary is auto-generated when a session ends
-- [ ] **SUMM-02**: Summary includes key decisions extracted from transcript
-- [ ] **SUMM-03**: Summary includes action items with owner attribution where identifiable
-- [ ] **SUMM-04**: Summary includes main discussion points
-- [ ] **SUMM-05**: Summary includes open questions / unresolved items
-- [ ] **SUMM-06**: Summary uses two-phase LLM prompt (grounding pass then formatting) to minimize hallucination
-- [ ] **SUMM-07**: Summary generation hooks into AppCoordinator after awaitPendingWrites(), not from UI
-- [ ] **SUMM-08**: Summary works with both OpenRouter (cloud) and Ollama (local) providers
-- [ ] **SUMM-09**: Summary is saved as Markdown alongside the transcript in ~/Documents/OpenOats/
+- [x] **SUMM-01**: Structured summary is auto-generated when a session ends
+- [x] **SUMM-02**: Summary includes key decisions extracted from transcript
+- [x] **SUMM-03**: Summary includes action items with owner attribution where identifiable
+- [x] **SUMM-04**: Summary includes main discussion points
+- [x] **SUMM-05**: Summary includes open questions / unresolved items
+- [x] **SUMM-06**: Summary uses two-phase LLM prompt (grounding pass then formatting) to minimize hallucination
+- [x] **SUMM-07**: Summary generation hooks into AppCoordinator after awaitPendingWrites(), not from UI
+- [x] **SUMM-08**: Summary works with both OpenRouter (cloud) and Ollama (local) providers
+- [x] **SUMM-09**: Summary is saved as Markdown alongside the transcript in ~/Documents/OpenOats/
 
 ### Main App Window
 
@@ -145,15 +145,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MENU-01 | Phase 4 | Complete |
 | MENU-02 | Phase 4 | Complete |
 | MENU-03 | Phase 4 | Complete |
-| SUMM-01 | Phase 5 | Pending |
-| SUMM-02 | Phase 5 | Pending |
-| SUMM-03 | Phase 5 | Pending |
-| SUMM-04 | Phase 5 | Pending |
-| SUMM-05 | Phase 5 | Pending |
-| SUMM-06 | Phase 5 | Pending |
-| SUMM-07 | Phase 5 | Pending |
-| SUMM-08 | Phase 5 | Pending |
-| SUMM-09 | Phase 5 | Pending |
+| SUMM-01 | Phase 5 | Complete |
+| SUMM-02 | Phase 5 | Complete |
+| SUMM-03 | Phase 5 | Complete |
+| SUMM-04 | Phase 5 | Complete |
+| SUMM-05 | Phase 5 | Complete |
+| SUMM-06 | Phase 5 | Complete |
+| SUMM-07 | Phase 5 | Complete |
+| SUMM-08 | Phase 5 | Complete |
+| SUMM-09 | Phase 5 | Complete |
 | SETT-01 | Phase 5 | Pending |
 | SETT-02 | Phase 5 | Pending |
 | SRCH-01 | Phase 6 | Pending |
