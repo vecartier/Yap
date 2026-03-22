@@ -25,7 +25,7 @@ func groupedSessions(_ sessions: [SessionIndex]) -> [(label: String, sessions: [
     return result
 }
 
-// Top-level enum for testability — exposed via @testable import OpenOatsKit
+// Top-level enum for testability — exposed via @testable import YapKit
 enum MeetingListItem: Identifiable, Hashable {
     case live
     case session(SessionIndex)

@@ -24,7 +24,7 @@ actor SessionStore {
             baseDirectory = rootDirectory
         } else {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            baseDirectory = appSupport.appendingPathComponent("OpenOats", isDirectory: true)
+            baseDirectory = appSupport.appendingPathComponent("Yap", isDirectory: true)
         }
         sessionsDirectory = baseDirectory.appendingPathComponent("sessions", isDirectory: true)
 

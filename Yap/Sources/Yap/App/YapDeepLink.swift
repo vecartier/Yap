@@ -1,8 +1,8 @@
 import Foundation
 
-enum OpenOatsDeepLink {
+enum YapDeepLink {
     static func parse(_ url: URL) -> ExternalCommand? {
-        guard let scheme = url.scheme?.lowercased(), scheme == "openoats" else {
+        guard let scheme = url.scheme?.lowercased(), scheme == "yap" else {
             return nil
         }
 

@@ -13,7 +13,7 @@ actor TranscriptLogger {
 
     init(directory: URL? = nil) {
         self.directory = directory ?? FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Documents/OpenOats", isDirectory: true)
+            .appendingPathComponent("Documents/Yap", isDirectory: true)
         try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
         Self.dropMetadataNeverIndex(in: self.directory)
     }
@@ -44,7 +44,7 @@ actor TranscriptLogger {
         let headerFmt = DateFormatter()
         headerFmt.dateStyle = .medium
         headerFmt.timeStyle = .short
-        sessionHeader = "OpenOats - \(headerFmt.string(from: now))\n\n"
+        sessionHeader = "Yap - \(headerFmt.string(from: now))\n\n"
 
         FileManager.default.createFile(atPath: file.path, contents: sessionHeader.data(using: .utf8),
                                        attributes: [.posixPermissions: 0o600])

@@ -33,8 +33,8 @@ final class AudioRecorder: @unchecked Sendable {
             sessionTimestamp = fmt.string(from: Date())
 
             let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
-            micTempURL = tmp.appendingPathComponent("openoats_mic_\(sessionTimestamp).caf")
-            sysTempURL = tmp.appendingPathComponent("openoats_sys_\(sessionTimestamp).caf")
+            micTempURL = tmp.appendingPathComponent("yap_mic_\(sessionTimestamp).caf")
+            sysTempURL = tmp.appendingPathComponent("yap_sys_\(sessionTimestamp).caf")
         }
     }
 

@@ -1,5 +1,5 @@
 import XCTest
-@testable import OpenOatsKit
+@testable import YapKit
 
 final class TranscriptTimestampTests: XCTestCase {
 

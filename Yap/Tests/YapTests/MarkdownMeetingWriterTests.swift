@@ -1,5 +1,5 @@
 import XCTest
-@testable import OpenOatsKit
+@testable import YapKit
 
 final class MarkdownMeetingWriterTests: XCTestCase {
 
@@ -184,7 +184,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
         XCTAssertTrue(frontmatter.hasPrefix("---"))
         XCTAssertTrue(frontmatter.hasSuffix("---"))
-        XCTAssertTrue(frontmatter.contains("schema: openoats/v1"))
+        XCTAssertTrue(frontmatter.contains("schema: yap/v1"))
         XCTAssertTrue(frontmatter.contains("title: \"Meeting\""))
         XCTAssertTrue(frontmatter.contains("duration: 32"))
         XCTAssertTrue(frontmatter.contains("participants:"))
@@ -231,7 +231,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
             metadata: metadata, records: records, title: "Meeting"
         )
 
-        XCTAssertTrue(frontmatter.contains("x_openoats_session: \"session_2026-03-20_14-00-06\""))
+        XCTAssertTrue(frontmatter.contains("x_yap_session: \"session_2026-03-20_14-00-06\""))
     }
 
     // MARK: - Duration Computation
@@ -323,7 +323,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
         // Verify structure
         XCTAssertTrue(markdown.hasPrefix("---\n"))
-        XCTAssertTrue(markdown.contains("schema: openoats/v1"))
+        XCTAssertTrue(markdown.contains("schema: yap/v1"))
         XCTAssertTrue(markdown.contains("# Meeting"))
         XCTAssertTrue(markdown.contains("## Transcript"))
         XCTAssertTrue(markdown.contains("[00:00:00] **You:** Hello world"))
@@ -336,7 +336,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
     func testWriteCreatesFileOnDisk() {
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
         let start = Date()
@@ -365,12 +365,12 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
         // Verify content
         let content = try! String(contentsOf: fileURL!, encoding: .utf8)
-        XCTAssertTrue(content.contains("schema: openoats/v1"))
+        XCTAssertTrue(content.contains("schema: yap/v1"))
     }
 
     func testWriteHandlesFilenameCollision() {
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
         let start = Date()
@@ -402,7 +402,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
     func testWriteReturnsNilForEmptyRecords() {
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
         let metadata = MarkdownMeetingWriter.Metadata(
@@ -468,7 +468,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
     func testFindMarkdownFileBySessionID() {
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
         let start = Date()
@@ -505,7 +505,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
         let date = calendar.date(from: components)!
 
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 
@@ -520,7 +520,7 @@ final class MarkdownMeetingWriterTests: XCTestCase {
 
     func testFilenameWithNilTitleUsesMeeting() {
         let tmpDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenOatsTest-\(UUID().uuidString)")
+            .appendingPathComponent("YapTest-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmpDir) }
 

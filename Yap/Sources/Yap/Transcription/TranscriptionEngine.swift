@@ -4,10 +4,10 @@ import FluidAudio
 import Observation
 import os
 
-/// Simple file logger for diagnostics — writes to /tmp/openoats.log
+/// Simple file logger for diagnostics — writes to /tmp/yap.log
 func diagLog(_ msg: String) {
     let line = "\(Date()): \(msg)\n"
-    let path = "/tmp/openoats.log"
+    let path = "/tmp/yap.log"
     if let fh = FileHandle(forWritingAtPath: path) {
         fh.seekToEndOfFile()
         fh.write(line.data(using: .utf8)!)

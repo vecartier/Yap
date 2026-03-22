@@ -42,7 +42,7 @@ actor OpenRouterClient {
                         urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     }
                     if targetURL.host?.contains("openrouter.ai") == true {
-                        urlRequest.setValue("OpenOats/2.0", forHTTPHeaderField: "HTTP-Referer")
+                        urlRequest.setValue("Yap/2.0", forHTTPHeaderField: "HTTP-Referer")
                     }
                     urlRequest.httpBody = try JSONEncoder().encode(request)
 
@@ -126,7 +126,7 @@ actor OpenRouterClient {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
         if targetURL.host?.contains("openrouter.ai") == true {
-            urlRequest.setValue("OpenOats/2.0", forHTTPHeaderField: "HTTP-Referer")
+            urlRequest.setValue("Yap/2.0", forHTTPHeaderField: "HTTP-Referer")
         }
         urlRequest.httpBody = bodyData
 
@@ -165,7 +165,7 @@ actor OpenRouterClient {
             urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
         if targetURL.host?.contains("openrouter.ai") == true {
-            urlRequest.setValue("OpenOats/2.0", forHTTPHeaderField: "HTTP-Referer")
+            urlRequest.setValue("Yap/2.0", forHTTPHeaderField: "HTTP-Referer")
         }
         urlRequest.httpBody = try JSONEncoder().encode(request)
 

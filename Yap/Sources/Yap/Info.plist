@@ -3,27 +3,27 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>OpenOats</string>
+    <string>Yap</string>
     <key>CFBundleDisplayName</key>
-    <string>OpenOats</string>
+    <string>Yap</string>
     <key>CFBundleIdentifier</key>
-    <string>com.openoats.app</string>
+    <string>com.yap.app</string>
     <key>CFBundleVersion</key>
     <string>1.11.1</string>
     <key>CFBundleShortVersionString</key>
     <string>1.11.1</string>
     <key>CFBundleExecutable</key>
-    <string>OpenOats</string>
+    <string>Yap</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>com.openoats.app</string>
+            <string>com.yap.app</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>openoats</string>
+                <string>yap</string>
             </array>
         </dict>
     </array>
@@ -32,13 +32,13 @@
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>OpenOats needs microphone access to transcribe your voice in real-time during conversations.</string>
+    <string>Yap needs microphone access to transcribe your voice in real-time during conversations.</string>
     <key>NSAudioCaptureUsageDescription</key>
-    <string>OpenOats needs system audio recording access to transcribe other participants in real time.</string>
+    <string>Yap needs system audio recording access to transcribe other participants in real time.</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
     <key>SUFeedURL</key>
-    <string>https://raw.githubusercontent.com/yazinsai/OpenOats/gh-pages/appcast.xml</string>
+    <string>https://raw.githubusercontent.com/yazinsai/Yap/gh-pages/appcast.xml</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
     <key>SUPublicEDKey</key>

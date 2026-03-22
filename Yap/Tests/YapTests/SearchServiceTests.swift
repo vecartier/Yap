@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import OpenOatsKit
+@testable import YapKit
 
 @Suite("SearchService")
 struct SearchServiceTests {

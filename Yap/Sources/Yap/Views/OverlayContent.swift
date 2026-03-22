@@ -11,7 +11,7 @@ struct OverlayContent: View {
                 Circle()
                     .fill(Color.green)
                     .frame(width: 6, height: 6)
-                Text("OpenOats")
+                Text("Yap")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()

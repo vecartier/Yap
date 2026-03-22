@@ -3,7 +3,7 @@ import CoreAudio
 import Foundation
 import os
 
-private let micLog = Logger(subsystem: "com.openoats", category: "MicCapture")
+private let micLog = Logger(subsystem: "com.yap", category: "MicCapture")
 
 /// Captures microphone audio via AVAudioEngine and streams PCM buffers.
 final class MicCapture: @unchecked Sendable {

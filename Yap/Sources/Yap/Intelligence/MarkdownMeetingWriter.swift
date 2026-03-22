@@ -1,9 +1,9 @@
 import Foundation
 import os
 
-private let writerLogger = Logger(subsystem: "com.openoats.app", category: "MarkdownMeetingWriter")
+private let writerLogger = Logger(subsystem: "com.yap.app", category: "MarkdownMeetingWriter")
 
-/// Produces spec-compliant openoats/v1 Markdown files from session data.
+/// Produces spec-compliant yap/v1 Markdown files from session data.
 ///
 /// The writer is stateless: call `write(...)` with session metadata and transcript records,
 /// and it returns the URL of the generated `.md` file. All I/O is synchronous and runs
@@ -36,7 +36,7 @@ enum MarkdownMeetingWriter {
     /// - Parameters:
     ///   - metadata: Session metadata (title, dates, app, engine).
     ///   - records: The transcript records from the JSONL session store.
-    ///   - outputDirectory: The directory to write into (e.g. `~/Documents/OpenOats/`).
+    ///   - outputDirectory: The directory to write into (e.g. `~/Documents/Yap/`).
     /// - Returns: The URL of the written file, or `nil` on failure.
     @discardableResult
     static func write(
@@ -92,7 +92,7 @@ enum MarkdownMeetingWriter {
     ) -> String {
         var lines: [String] = ["---"]
 
-        lines.append("schema: openoats/v1")
+        lines.append("schema: yap/v1")
         lines.append("title: \(yamlQuote(title))")
         lines.append("date: \(formatISO8601(metadata.startedAt))")
         lines.append("duration: \(computeDuration(records: records, metadata: metadata))")
@@ -119,7 +119,7 @@ enum MarkdownMeetingWriter {
         }
 
         // Extension: link back to session ID
-        lines.append("x_openoats_session: \(yamlQuote(metadata.sessionID))")
+        lines.append("x_yap_session: \(yamlQuote(metadata.sessionID))")
 
         lines.append("---")
         return lines.joined(separator: "\n")
@@ -565,7 +565,7 @@ enum MarkdownMeetingWriter {
     // MARK: - Find Markdown File for Session
 
     /// Find the `.md` file for a given session ID in the output directory.
-    /// Searches by the `x_openoats_session` frontmatter field.
+    /// Searches by the `x_yap_session` frontmatter field.
     static func findMarkdownFile(sessionID: String, in directory: URL) -> URL? {
         let fm = FileManager.default
         guard let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
@@ -574,7 +574,7 @@ enum MarkdownMeetingWriter {
 
         for file in files where file.pathExtension == "md" {
             guard let content = try? String(contentsOf: file, encoding: .utf8) else { continue }
-            if content.contains("x_openoats_session: \"\(sessionID)\"") {
+            if content.contains("x_yap_session: \"\(sessionID)\"") {
                 return file
             }
         }

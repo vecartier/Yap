@@ -20,7 +20,7 @@ struct ExternalCommandRequest: Identifiable, Equatable {
     }
 }
 
-private let logger = Logger(subsystem: "com.openoats.app", category: "MeetingDetection")
+private let logger = Logger(subsystem: "com.yap.app", category: "MeetingDetection")
 
 /// Shared state coordinator injected into all window scenes.
 /// Bridges the main window (transcription) and Notes window (history + generation).

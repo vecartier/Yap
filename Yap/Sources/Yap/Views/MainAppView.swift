@@ -49,7 +49,7 @@ struct MainAppView: View {
             settings.applyScreenShareVisibility()
         }
         .onOpenURL { url in
-            guard let command = OpenOatsDeepLink.parse(url) else { return }
+            guard let command = YapDeepLink.parse(url) else { return }
             if NSApp.activationPolicy() == .accessory {
                 NSApp.setActivationPolicy(.regular)
                 NSApp.activate(ignoringOtherApps: true)
@@ -68,11 +68,11 @@ struct MainAppView: View {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         if let window = NSApp.windows.first(where: {
-            $0.identifier?.rawValue == OpenOatsRootApp.mainWindowID
+            $0.identifier?.rawValue == YapRootApp.mainWindowID
         }) {
             window.makeKeyAndOrderFront(nil)
         } else {
-            openWindow(id: OpenOatsRootApp.mainWindowID)
+            openWindow(id: YapRootApp.mainWindowID)
         }
     }
 }

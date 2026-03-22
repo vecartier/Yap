@@ -39,7 +39,7 @@ final class ParakeetBackend: TranscriptionBackend, @unchecked Sendable {
         let vocab = customVocabularyText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !vocab.isEmpty {
             let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("openoats-custom-vocabulary-\(UUID().uuidString).txt")
+                .appendingPathComponent("yap-custom-vocabulary-\(UUID().uuidString).txt")
             try vocab.write(to: tempURL, atomically: true, encoding: .utf8)
             defer { try? FileManager.default.removeItem(at: tempURL) }
 

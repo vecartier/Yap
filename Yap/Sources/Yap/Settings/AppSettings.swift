@@ -141,7 +141,7 @@ struct AppSettingsStorage {
             defaults: defaults,
             secretStore: .keychain,
             defaultNotesDirectory: FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Documents/OpenOats"),
+                .appendingPathComponent("Documents/Yap"),
             runMigrations: true
         )
     }
@@ -632,7 +632,7 @@ final class AppSettings {
     }
 
     /// Migrate file-backed state (sessions, templates, KB cache, transcripts)
-    /// from ~/Library/Application Support/OpenGranola/ to OpenOats/ and
+    /// from ~/Library/Application Support/OpenGranola/ to Yap/ and
     /// handle the implicit KB folder default.
     private static func migrateFilesFromOpenGranola(defaults: UserDefaults) {
         let fm = FileManager.default
@@ -640,7 +640,7 @@ final class AppSettings {
         let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
 
         let oldAppSupportDir = appSupport.appendingPathComponent("OpenGranola")
-        let newAppSupportDir = appSupport.appendingPathComponent("OpenOats")
+        let newAppSupportDir = appSupport.appendingPathComponent("Yap")
 
         // Migrate Application Support: sessions/, templates.json, kb_cache.json
         if fm.fileExists(atPath: oldAppSupportDir.path) {
@@ -671,7 +671,7 @@ final class AppSettings {
         // KB folder: leave unset by default. Only preserve an explicitly-set path
         // that pointed at the old OpenGranola directory (user chose it themselves).
         let oldDocDir = home.appendingPathComponent("Documents/OpenGranola")
-        let newDocDir = home.appendingPathComponent("Documents/OpenOats")
+        let newDocDir = home.appendingPathComponent("Documents/Yap")
 
         // Migrate notes folder: if the old default directory has content,
         // use it as the notes folder so transcript archives stay accessible.
@@ -685,7 +685,7 @@ final class AppSettings {
         }
 
         // Migrate transcript archives: move files from ~/Documents/OpenGranola/
-        // into ~/Documents/OpenOats/ so new sessions and old archives coexist.
+        // into ~/Documents/Yap/ so new sessions and old archives coexist.
         // Skip if the old dir is the active notes folder (files stay in place).
         let activeNotes = defaults.string(forKey: "notesFolderPath") ?? ""
         if fm.fileExists(atPath: oldDocDir.path) && oldDocDir.path != activeNotes {
@@ -702,10 +702,10 @@ final class AppSettings {
     }
 
     /// Migrate keychain entries from the old "com.opengranola.app" service to the
-    /// current "com.openoats.app" service. Needed for existing users whose keychain
+    /// current "com.yap.app" service. Needed for existing users whose keychain
     /// was written under the previous bundle ID.
     private static func migrateKeychainServiceIfNeeded(defaults: UserDefaults) {
-        let migrationKey = "didMigrateKeychainToOpenOats"
+        let migrationKey = "didMigrateKeychainToYap"
         guard !defaults.bool(forKey: migrationKey) else { return }
         defer { defaults.set(true, forKey: migrationKey) }
 
@@ -782,7 +782,7 @@ final class AppSettings {
 // MARK: - Keychain Helper
 
 enum KeychainHelper {
-    private static let service = "com.openoats.app"
+    private static let service = "com.yap.app"
 
     static func save(key: String, value: String) {
         guard let data = value.data(using: .utf8) else { return }

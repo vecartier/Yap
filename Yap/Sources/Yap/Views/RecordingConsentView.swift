@@ -25,7 +25,7 @@ struct RecordingConsentView: View {
             Spacer().frame(height: 10)
 
             Text("""
-            OpenOats records and transcribes audio from your microphone \
+            Yap records and transcribes audio from your microphone \
             and system audio during meetings. Many jurisdictions require \
             all-party consent before recording a conversation.
 
@@ -42,7 +42,7 @@ struct RecordingConsentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 consentBullet("You are solely responsible for obtaining any required consent from all participants before recording.")
                 consentBullet("You will comply with all applicable local, state, and federal laws governing recording and wiretapping.")
-                consentBullet("The developers of OpenOats accept no liability for unauthorized or unlawful recording.")
+                consentBullet("The developers of Yap accept no liability for unauthorized or unlawful recording.")
             }
             .padding(.horizontal, 8)
 

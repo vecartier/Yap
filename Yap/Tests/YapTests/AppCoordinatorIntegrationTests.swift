@@ -1,18 +1,18 @@
 import XCTest
-@testable import OpenOatsKit
+@testable import YapKit
 
 @MainActor
 final class AppCoordinatorIntegrationTests: XCTestCase {
 
     func testUserStoppedFinalizesSessionAndRefreshesHistory() async {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("OpenOatsCoordinatorTests", isDirectory: true)
+            .appendingPathComponent("YapCoordinatorTests", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         let notesDirectory = root.appendingPathComponent("Notes", isDirectory: true)
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: notesDirectory, withIntermediateDirectories: true)
 
-        let suiteName = "com.openoats.tests.coordinator.\(UUID().uuidString)"
+        let suiteName = "com.yap.tests.coordinator.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         defaults.removePersistentDomain(forName: suiteName)
         defaults.set(notesDirectory.path, forKey: "notesFolderPath")

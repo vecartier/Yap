@@ -15,7 +15,7 @@ protocol AudioSignalSource: Sendable {
 /// Monitors kAudioDevicePropertyDeviceIsRunningSomewhere on all physical input devices.
 /// Does NOT capture audio -- only reads activation status.
 final class CoreAudioSignalSource: AudioSignalSource, @unchecked Sendable {
-    private let listenerQueue = DispatchQueue(label: "com.openoats.mic-listener")
+    private let listenerQueue = DispatchQueue(label: "com.yap.mic-listener")
     private var deviceIDs: [AudioDeviceID] = []
     private var continuation: AsyncStream<Bool>.Continuation?
     private var lastEmittedValue: Bool = false
@@ -169,7 +169,7 @@ actor MeetingDetector {
     ) {
         self.audioSource = audioSource ?? CoreAudioSignalSource()
         self.customBundleIDs = customBundleIDs
-        self.selfBundleID = Bundle.main.bundleIdentifier ?? "com.openoats.app"
+        self.selfBundleID = Bundle.main.bundleIdentifier ?? "com.yap.app"
 
         // Known meeting apps (embedded to avoid Bundle.module issues in
         // manually-constructed .app bundles)

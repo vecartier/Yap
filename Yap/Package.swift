@@ -7,12 +7,12 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [
         .library(
-            name: "OpenOatsKit",
-            targets: ["OpenOatsKit"]
+            name: "YapKit",
+            targets: ["YapKit"]
         ),
         .executable(
             name: "Yap",
-            targets: ["OpenOatsAppExecutable"]
+            targets: ["YapAppExecutable"]
         ),
     ],
     dependencies: [
@@ -23,7 +23,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "OpenOatsKit",
+            name: "YapKit",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio"),
                 .product(name: "Sparkle", package: "Sparkle"),
@@ -31,16 +31,16 @@ let package = Package(
                 .product(name: "LaunchAtLogin", package: "LaunchAtLogin-Modern"),
             ],
             path: "Sources/Yap",
-            exclude: ["Info.plist", "OpenOats.entitlements", "Assets", "Resources"]
+            exclude: ["Info.plist", "Yap.entitlements", "Assets", "Resources"]
         ),
         .executableTarget(
-            name: "OpenOatsAppExecutable",
-            dependencies: ["OpenOatsKit"],
+            name: "YapAppExecutable",
+            dependencies: ["YapKit"],
             path: "Sources/YapApp"
         ),
         .testTarget(
-            name: "OpenOatsTests",
-            dependencies: ["OpenOatsKit"],
+            name: "YapTests",
+            dependencies: ["YapKit"],
             path: "Tests/YapTests"
         ),
     ]

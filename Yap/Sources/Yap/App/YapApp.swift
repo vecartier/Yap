@@ -3,7 +3,7 @@ import AppKit
 import Sparkle
 import UserNotifications
 
-public struct OpenOatsRootApp: App {
+public struct YapRootApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.openWindow) private var openWindow
     @State private var settings: AppSettings
@@ -53,7 +53,7 @@ public struct OpenOatsRootApp: App {
                 .keyboardShortcut("m", modifiers: [.command, .shift])
 
                 Button("GitHub Repository...") {
-                    if let url = URL(string: "https://github.com/yazinsai/OpenOats") {
+                    if let url = URL(string: "https://github.com/yazinsai/Yap") {
                         NSWorkspace.shared.open(url)
                     }
                 }
@@ -69,7 +69,7 @@ public struct OpenOatsRootApp: App {
     }
 }
 
-extension OpenOatsRootApp {
+extension YapRootApp {
     static let mainWindowID = "main"
 
     private func showMainWindow() {
@@ -114,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private var isUITest: Bool {
-        ProcessInfo.processInfo.environment["OPENOATS_UI_TEST"] != nil
+        ProcessInfo.processInfo.environment["YAP_UI_TEST"] != nil
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -132,7 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
 
         if !isUITest {
-            for window in NSApp.windows where window.identifier?.rawValue == OpenOatsRootApp.mainWindowID {
+            for window in NSApp.windows where window.identifier?.rawValue == YapRootApp.mainWindowID {
                 window.delegate = self
             }
         }
@@ -201,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         guard !isUITest else { return true }
 
-        let isMainWindow = sender.identifier?.rawValue == OpenOatsRootApp.mainWindowID
+        let isMainWindow = sender.identifier?.rawValue == YapRootApp.mainWindowID
 
         if isMainWindow {
             sender.orderOut(nil)
