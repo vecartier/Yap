@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - PastMeetingDetailView
 
@@ -204,12 +205,19 @@ struct PastMeetingDetailView: View {
     // MARK: - Slack Actions Row
 
     private var slackActionsRow: some View {
-        Button("Copy for Slack", systemImage: "doc.on.clipboard") {
-            copyForSlack()
+        HStack(spacing: 8) {
+            Button("Copy for Slack", systemImage: "doc.on.clipboard") {
+                copyForSlack()
+            }
+            .buttonStyle(.bordered)
+            .disabled(!canCopySlack)
+            .help(canCopySlack ? "Copy Slack-formatted summary" : "Summary required")
+
+            Button("Export PDF", systemImage: "arrow.down.doc") {
+                exportPDF()
+            }
+            .buttonStyle(.bordered)
         }
-        .buttonStyle(.bordered)
-        .disabled(!canCopySlack)
-        .help(canCopySlack ? "Copy Slack-formatted summary" : "Summary required")
     }
 
     private var canCopySlack: Bool {
@@ -231,6 +239,36 @@ struct PastMeetingDetailView: View {
         let text = SlackFormatter.format(slackSummary)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    // MARK: - Export
+
+    private func exportPDF() {
+        guard let session = coordinator.sessionHistory.first(where: { $0.id == sessionID }) else { return }
+
+        let summary: SummaryEngine.PersistedSummary?
+        if case .ready(let persisted) = summaryState { summary = persisted } else { summary = nil }
+
+        let records = rows.map { $0.0 }
+
+        Task { @MainActor in
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.pdf]
+            let filename = (session.title ?? "Meeting")
+                .replacingOccurrences(of: "/", with: "-")
+            panel.nameFieldStringValue = "\(filename).pdf"
+            panel.directoryURL = FileManager.default.urls(
+                for: .documentDirectory, in: .userDomainMask
+            ).first
+
+            guard await panel.beginSheetModal(for: NSApp.keyWindow ?? NSWindow()) == .OK,
+                  let url = panel.url else { return }
+
+            let content = PDFExporter.Content(session: session, summary: summary, records: records)
+            Task.detached(priority: .userInitiated) {
+                await PDFExporter.export(content, to: url)
+            }
+        }
     }
 
     // MARK: - Transcript Divider
