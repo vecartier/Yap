@@ -79,6 +79,69 @@ actor OpenRouterClient {
         }
     }
 
+    /// Non-streaming completion with structured JSON output (forced format via provider-specific field).
+    /// For Ollama: sends `format` field with the JSON schema.
+    /// For OpenRouter / OpenAI-compatible: sends `response_format` with `json_schema` wrapper.
+    func completeStructured(
+        apiKey: String? = nil,
+        model: String,
+        messages: [Message],
+        jsonSchema: [String: Any],
+        provider: LLMProvider,
+        maxTokens: Int = 1024,
+        baseURL: URL? = nil
+    ) async throws -> String {
+        let targetURL = baseURL ?? Self.defaultBaseURL
+
+        // Build base body as [String: Any] so we can inject provider-specific format keys
+        var body: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "max_tokens": maxTokens,
+            "messages": messages.map { ["role": $0.role, "content": $0.content] }
+        ]
+
+        switch provider {
+        case .ollama:
+            // Ollama uses top-level `format` field with the JSON schema directly
+            body["format"] = jsonSchema
+        case .openRouter, .mlx, .openAICompatible:
+            // OpenAI-compatible providers use `response_format` with `json_schema` wrapper
+            body["response_format"] = [
+                "type": "json_schema",
+                "json_schema": [
+                    "name": "meeting_summary",
+                    "strict": true,
+                    "schema": jsonSchema
+                ] as [String: Any]
+            ] as [String: Any]
+        }
+
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+
+        var urlRequest = URLRequest(url: targetURL)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let apiKey, !apiKey.isEmpty {
+            urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        if targetURL.host?.contains("openrouter.ai") == true {
+            urlRequest.setValue("OpenOats/2.0", forHTTPHeaderField: "HTTP-Referer")
+        }
+        urlRequest.httpBody = bodyData
+
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw OpenRouterError.httpError(statusCode, host: targetURL.host)
+        }
+
+        let completionResponse = try JSONDecoder().decode(CompletionResponse.self, from: data)
+        return completionResponse.choices.first?.message.content ?? ""
+    }
+
     /// Non-streaming completion for structured JSON tasks (gate decisions, state updates).
     func complete(
         apiKey: String? = nil,
