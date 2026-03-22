@@ -33,7 +33,7 @@ struct MenuBarPopoverView: View {
 
             Button(action: onShowMainWindow) {
                 HStack {
-                    Text("Open Papyrus")
+                    Text("Open Yap")
                     Spacer()
                 }
             }
@@ -45,7 +45,7 @@ struct MenuBarPopoverView: View {
 
             Button(action: onQuit) {
                 HStack {
-                    Text("Quit Papyrus")
+                    Text("Quit Yap")
                     Spacer()
                 }
             }

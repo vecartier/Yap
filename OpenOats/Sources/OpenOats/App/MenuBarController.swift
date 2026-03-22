@@ -38,7 +38,7 @@ final class MenuBarController {
         popover.contentViewController = NSHostingController(rootView: popoverView)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "waveform.circle", accessibilityDescription: "Papyrus")
+            button.image = NSImage(systemSymbolName: "waveform.circle", accessibilityDescription: "Yap")
             button.image?.isTemplate = true
             button.target = self
             button.action = #selector(togglePopover(_:))
@@ -79,7 +79,7 @@ final class MenuBarController {
         let symbolName = coordinator.isRecording ? "waveform.circle.fill" : "waveform.circle"
         statusItem.button?.image = NSImage(
             systemSymbolName: symbolName,
-            accessibilityDescription: "Papyrus"
+            accessibilityDescription: "Yap"
         )
         statusItem.button?.image?.isTemplate = true
     }
