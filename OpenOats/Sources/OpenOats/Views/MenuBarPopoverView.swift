@@ -114,19 +114,49 @@ struct MenuBarPopoverView: View {
             .tint(.red)
             .controlSize(.regular)
         } else {
-            Button(action: {
-                guard settings.hasAcknowledgedRecordingConsent else {
-                    onShowMainWindow()
-                    return
+            VStack(spacing: 8) {
+                Button(action: {
+                    guard settings.hasAcknowledgedRecordingConsent else {
+                        onShowMainWindow()
+                        return
+                    }
+                    coordinator.handle(.userStarted(.manual()), settings: settings)
+                }) {
+                    Text("Start Call")
+                        .font(.system(size: 13))
+                        .frame(maxWidth: .infinity)
                 }
-                coordinator.handle(.userStarted(.manual()), settings: settings)
-            }) {
-                Text("Start Recording")
-                    .font(.system(size: 13, weight: .medium))
-                    .frame(maxWidth: .infinity)
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+
+                Button(action: {
+                    guard settings.hasAcknowledgedRecordingConsent else {
+                        onShowMainWindow()
+                        return
+                    }
+                    coordinator.handle(.userStarted(.solo(.soloMemo)), settings: settings)
+                }) {
+                    Text("Solo (memo)")
+                        .font(.system(size: 13))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+
+                Button(action: {
+                    guard settings.hasAcknowledgedRecordingConsent else {
+                        onShowMainWindow()
+                        return
+                    }
+                    coordinator.handle(.userStarted(.solo(.soloRoom)), settings: settings)
+                }) {
+                    Text("Solo (room)")
+                        .font(.system(size: 13))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
         }
     }
 
