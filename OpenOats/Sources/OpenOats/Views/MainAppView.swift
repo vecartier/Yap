@@ -14,7 +14,7 @@ struct MainAppView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            MeetingSidebarView(selectedSessionID: $selectedSessionID)
+            MeetingSidebarView(selectedSessionID: $selectedSessionID, notesFolderPath: settings.notesFolderPath)
                 .frame(minWidth: 220)
         } detail: {
             DetailRouter(selectedSessionID: $selectedSessionID, settings: settings, updater: updater)

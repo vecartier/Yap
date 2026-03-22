@@ -40,7 +40,13 @@ enum MeetingListItem: Identifiable, Hashable {
 
 struct MeetingSidebarView: View {
     @Binding var selectedSessionID: String?
+    let notesFolderPath: String
     @Environment(AppCoordinator.self) private var coordinator
+
+    @State private var searchQuery = ""
+    @State private var searchTask: Task<Void, Never>?
+    @State private var filteredSessions: [SessionIndex] = []
+    private let searchService = SearchService()
 
     private var isFinalizing: Bool {
         if case .ending = coordinator.state { return true }
@@ -54,16 +60,43 @@ struct MeetingSidebarView: View {
                     LiveSessionRowView(coordinator: coordinator)
                         .tag("_live_")
                 }
-                ForEach(groupedSessions(coordinator.sessionHistory), id: \.label) { group in
-                    Section(group.label) {
-                        ForEach(group.sessions) { session in
-                            MeetingRowView(session: session)
-                                .tag(session.id)
+                if !searchQuery.isEmpty && filteredSessions.isEmpty {
+                    ContentUnavailableView.search(text: searchQuery)
+                } else {
+                    ForEach(groupedSessions(filteredSessions), id: \.label) { group in
+                        Section(group.label) {
+                            ForEach(group.sessions) { session in
+                                MeetingRowView(session: session)
+                                    .tag(session.id)
+                            }
                         }
                     }
                 }
             }
             .listStyle(.sidebar)
+            .searchable(text: $searchQuery, placement: .sidebar, prompt: "Search meetings")
+            .onChange(of: searchQuery) { _, query in
+                searchTask?.cancel()
+                guard !query.isEmpty else {
+                    filteredSessions = coordinator.sessionHistory
+                    return
+                }
+                searchTask = Task {
+                    try? await Task.sleep(for: .milliseconds(250))
+                    guard !Task.isCancelled else { return }
+                    let results = await searchService.search(
+                        query: query,
+                        sessions: coordinator.sessionHistory,
+                        store: coordinator.sessionStore,
+                        notesFolderPath: notesFolderPath
+                    )
+                    await MainActor.run { filteredSessions = results }
+                }
+            }
+            .onChange(of: coordinator.sessionHistory) { _, sessions in
+                if searchQuery.isEmpty { filteredSessions = sessions }
+            }
+            .onAppear { filteredSessions = coordinator.sessionHistory }
             .task {
                 await coordinator.loadHistory()
             }
