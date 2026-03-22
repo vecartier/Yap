@@ -25,37 +25,153 @@ func groupedSessions(_ sessions: [SessionIndex]) -> [(label: String, sessions: [
     return result
 }
 
+// Top-level enum for testability — exposed via @testable import OpenOatsKit
+enum MeetingListItem: Identifiable, Hashable {
+    case live
+    case session(SessionIndex)
+
+    var id: String {
+        switch self {
+        case .live: return "_live_"
+        case .session(let s): return s.id
+        }
+    }
+}
+
 struct MeetingSidebarView: View {
     @Binding var selectedSessionID: String?
     @Environment(AppCoordinator.self) private var coordinator
 
+    private var isFinalizing: Bool {
+        if case .ending = coordinator.state { return true }
+        return false
+    }
+
     var body: some View {
-        Group {
-            if coordinator.sessionHistory.isEmpty {
-                ContentUnavailableView(
-                    "No meetings yet",
-                    systemImage: "waveform",
-                    description: Text("Start a recording to see your meetings here.")
-                )
-            } else {
-                List(selection: $selectedSessionID) {
-                    ForEach(groupedSessions(coordinator.sessionHistory), id: \.label) { group in
-                        Section(group.label) {
-                            ForEach(group.sessions) { session in
-                                MeetingRowView(session: session)
-                                    .tag(session.id)
-                            }
-                        }
+        List(selection: $selectedSessionID) {
+            if coordinator.isRecording || isFinalizing {
+                LiveSessionRowView(coordinator: coordinator)
+                    .tag("_live_")
+            }
+            ForEach(groupedSessions(coordinator.sessionHistory), id: \.label) { group in
+                Section(group.label) {
+                    ForEach(group.sessions) { session in
+                        MeetingRowView(session: session)
+                            .tag(session.id)
                     }
                 }
-                .listStyle(.sidebar)
             }
         }
+        .listStyle(.sidebar)
         .task {
             await coordinator.loadHistory()
         }
     }
 }
+
+// MARK: - LiveSessionRowView
+
+private struct LiveSessionRowView: View {
+    let coordinator: AppCoordinator
+
+    @State private var elapsedSeconds: Int = 0
+    @State private var timerTask: Task<Void, Never>?
+    @State private var dotOpacity: Double = 1.0
+
+    private var isFinalizing: Bool {
+        if case .ending = coordinator.state { return true }
+        return false
+    }
+
+    private var recordingStartedAt: Date? {
+        if case .recording(let metadata) = coordinator.state { return metadata.startedAt }
+        return nil
+    }
+
+    private var formattedTime: String {
+        let minutes = elapsedSeconds / 60
+        let seconds = elapsedSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if isFinalizing {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 10, height: 10)
+            } else {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 10, height: 10)
+                    .opacity(dotOpacity)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Live Session")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                if isFinalizing {
+                    Text("Finalizing\u{2026}")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(formattedTime)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityIdentifier("main.liveSessionRow")
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                dotOpacity = 0.3
+            }
+            if coordinator.isRecording {
+                startTimer()
+            }
+        }
+        .onDisappear {
+            stopTimer()
+        }
+        .onChange(of: coordinator.isRecording) { _, isRecording in
+            if isRecording {
+                startTimer()
+            } else {
+                stopTimer()
+            }
+        }
+    }
+
+    private func startTimer() {
+        updateElapsed()
+        stopTimer()
+        timerTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { break }
+                updateElapsed()
+            }
+        }
+    }
+
+    private func updateElapsed() {
+        if let start = recordingStartedAt {
+            elapsedSeconds = max(0, Int(Date().timeIntervalSince(start)))
+        } else {
+            elapsedSeconds = 0
+        }
+    }
+
+    private func stopTimer() {
+        timerTask?.cancel()
+        timerTask = nil
+    }
+}
+
+// MARK: - MeetingRowView
 
 struct MeetingRowView: View {
     let session: SessionIndex
@@ -91,11 +207,11 @@ struct MeetingRowView: View {
         formatter.dateFormat = "MMM d, h:mm a"
         let timeString = formatter.string(from: session.startedAt)
         if let app = session.meetingApp, !app.isEmpty {
-            return "\(app) — \(timeString)"
+            return "\(app) \u{2014} \(timeString)"
         } else if let template = session.templateSnapshot {
-            return "\(template.name) — \(timeString)"
+            return "\(template.name) \u{2014} \(timeString)"
         }
-        return "Meeting — \(timeString)"
+        return "Meeting \u{2014} \(timeString)"
     }
 
     private func formattedDuration(for session: SessionIndex) -> String? {

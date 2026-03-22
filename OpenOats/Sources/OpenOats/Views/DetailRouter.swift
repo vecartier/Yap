@@ -5,30 +5,42 @@ struct DetailRouter: View {
     @Bindable var settings: AppSettings
     @Environment(AppCoordinator.self) private var coordinator
 
+    private enum Content { case live, past(String), empty }
+
+    private var resolvedContent: Content {
+        if selectedSessionID == "_live_" { return .live }
+        if let id = selectedSessionID { return .past(id) }
+        return .empty
+    }
+
     var body: some View {
-        if let sessionID = selectedSessionID {
-            PastMeetingDetailView(sessionID: sessionID, settings: settings)
-        } else if coordinator.sessionHistory.isEmpty {
-            // First launch / no meetings — friendly onboarding
-            VStack(spacing: 20) {
-                Image(systemName: "waveform.circle")
-                    .font(.system(size: 56))
-                    .foregroundStyle(.secondary)
-                Text("Start your first meeting")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                Text("Click the menu bar icon and press Start Recording.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+        switch resolvedContent {
+        case .live:
+            LiveDetailView(settings: settings)
+        case .past(let id):
+            PastMeetingDetailView(sessionID: id, settings: settings)
+        case .empty:
+            if coordinator.sessionHistory.isEmpty {
+                VStack(spacing: 20) {
+                    Image(systemName: "waveform.circle")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.secondary)
+                    Text("Start your first meeting")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text("Click the menu bar icon and press Start Recording.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
+            } else {
+                ContentUnavailableView(
+                    "Select a Meeting",
+                    systemImage: "waveform",
+                    description: Text("Choose a meeting from the sidebar.")
+                )
             }
-            .padding()
-        } else {
-            ContentUnavailableView(
-                "Select a Meeting",
-                systemImage: "waveform",
-                description: Text("Choose a meeting from the sidebar.")
-            )
         }
     }
 }

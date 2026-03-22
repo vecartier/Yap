@@ -18,6 +18,16 @@ struct MainAppView: View {
             DetailRouter(selectedSessionID: $selectedSessionID, settings: settings)
         }
         .navigationSplitViewStyle(.balanced)
+        .onChange(of: coordinator.isRecording) { _, isRecording in
+            if isRecording {
+                selectedSessionID = "_live_"
+            }
+            // DO NOT clear on false — that would flash to empty during finalization
+        }
+        .onChange(of: coordinator.lastEndedSession) { _, session in
+            guard let session else { return }
+            selectedSessionID = session.id
+        }
         .onAppear {
             appDelegate.coordinator = coordinator
             appDelegate.settings = settings
