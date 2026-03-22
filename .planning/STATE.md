@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-22T09:19:04.974Z"
+stopped_at: "Checkpoint: Task 3 human-verify — 04-02-PLAN.md (implementation complete)"
+last_updated: "2026-03-22T09:24:33.893Z"
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -51,6 +51,7 @@ Plan: 1 of 2
 | Phase 03-past-meeting-detail P01 | 2 | 2 tasks | 3 files |
 | Phase 03-past-meeting-detail P02 | 2 | 3 tasks | 3 files |
 | Phase 04-live-recording-menu-bar-cleanup P01 | 5 | 2 tasks | 6 files |
+| Phase 04-live-recording-menu-bar-cleanup P02 | 6 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ Recent decisions affecting current work:
 - [Phase 04-live-recording-menu-bar-cleanup]: SessionIndex/TemplateSnapshot gained Equatable+Hashable to enable onChange(of: lastEndedSession) and MeetingListItem synthesis
 - [Phase 04-live-recording-menu-bar-cleanup]: isFinalizing checks coordinator.state directly (not isRecording) — .ending returns false for isRecording, must check state directly to keep LiveDetailView visible during finalization
 - [Phase 04-live-recording-menu-bar-cleanup]: _live_ sentinel string is sole routing signal in DetailRouter — not coordinator.isRecording — Finalizing state stays on LiveDetailView
+- [Phase 04-live-recording-menu-bar-cleanup]: ContentView.swift self-contained — all openWindow(id: 'notes') calls lived inside it; deletion required no external reference cleanup
+- [Phase 04-live-recording-menu-bar-cleanup]: Menu bar popover has no live transcript — transcript only in main window LiveDetailView
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T09:19:04.971Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-22T09:24:33.889Z
+Stopped at: Checkpoint: Task 3 human-verify — 04-02-PLAN.md (implementation complete)
 Resume file: None

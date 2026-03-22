@@ -51,9 +51,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Menu Bar
 
-- [ ] **MENU-01**: Menu bar popover shows only: recording status, start/stop buttons, "Open MeetingScribe" link
-- [ ] **MENU-02**: Live transcript is removed from menu bar popover
-- [ ] **MENU-03**: ContentView.swift and NotesView.swift are removed (logic migrated to main window)
+- [x] **MENU-01**: Menu bar popover shows only: recording status, start/stop buttons, "Open MeetingScribe" link
+- [x] **MENU-02**: Live transcript is removed from menu bar popover
+- [x] **MENU-03**: ContentView.swift and NotesView.swift are removed (logic migrated to main window)
 
 ### Slack Message
 
@@ -142,9 +142,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIVE-02 | Phase 4 | Complete |
 | LIVE-03 | Phase 4 | Complete |
 | LIVE-04 | Phase 4 | Complete |
-| MENU-01 | Phase 4 | Pending |
-| MENU-02 | Phase 4 | Pending |
-| MENU-03 | Phase 4 | Pending |
+| MENU-01 | Phase 4 | Complete |
+| MENU-02 | Phase 4 | Complete |
+| MENU-03 | Phase 4 | Complete |
 | SUMM-01 | Phase 5 | Pending |
 | SUMM-02 | Phase 5 | Pending |
 | SUMM-03 | Phase 5 | Pending |
