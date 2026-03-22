@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-22T10:17:52.184Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-22T10:25:51Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 ## Current Position
 
-Phase: 05 (summary-engine-settings) — EXECUTING
-Plan: 1 of 2
+Phase: 05 (summary-engine-settings) — COMPLETE
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 1 of 2
 | Phase 04-live-recording-menu-bar-cleanup P01 | 5 | 2 tasks | 6 files |
 | Phase 04-live-recording-menu-bar-cleanup P02 | 6 | 2 tasks | 3 files |
 | Phase 05-summary-engine-settings P01 | 9 | 2 tasks | 5 files |
+| Phase 05-summary-engine-settings P02 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 05-summary-engine-settings]: SummaryEngine.generate() accepts [Utterance] not [SessionRecord] — utterances are in-memory; no extra JSONL reload needed
 - [Phase 05-summary-engine-settings]: ProviderConfig Sendable snapshot pattern: capture @MainActor AppSettings into Sendable struct before crossing actor boundary — established pattern for future actors
 - [Phase 05-summary-engine-settings]: SummaryState in SummaryState.swift (not nested in AppCoordinator) — consistent with one-type-per-file convention; accessible to tests without namespace
+- [Phase 05-summary-engine-settings]: SPUUpdater threaded as parameter (OpenOatsRootApp -> MainAppView -> DetailRouter) — not env-injected; updaterController is a let on root app struct, not available via @Environment
+- [Phase 05-summary-engine-settings]: retrySummary() converts [SessionRecord] to [Utterance] inline — loadTranscript returns SessionRecord but requestSummaryRetry accepts Utterance; matching fields allow simple map
+- [Phase 05-summary-engine-settings]: CommandGroup(replacing: .appSettings) removes system Settings menu item — prevents duplicate Settings entries now that SettingsView lives in main window detail pane
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T10:17:52.180Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-22T10:25:51Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

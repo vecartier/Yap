@@ -74,8 +74,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Settings
 
-- [ ] **SETT-01**: Settings accessible as a tab/section in the main window sidebar
-- [ ] **SETT-02**: Settings include: LLM provider, transcription model, API keys, audio input device
+- [x] **SETT-01**: Settings accessible as a tab/section in the main window sidebar
+- [x] **SETT-02**: Settings include: LLM provider, transcription model, API keys, audio input device
 
 ## v2 Requirements
 
@@ -154,8 +154,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SUMM-07 | Phase 5 | Complete |
 | SUMM-08 | Phase 5 | Complete |
 | SUMM-09 | Phase 5 | Complete |
-| SETT-01 | Phase 5 | Pending |
-| SETT-02 | Phase 5 | Pending |
+| SETT-01 | Phase 5 | Complete |
+| SETT-02 | Phase 5 | Complete |
 | SRCH-01 | Phase 6 | Pending |
 | SRCH-02 | Phase 6 | Pending |
 | SRCH-03 | Phase 6 | Pending |

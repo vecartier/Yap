@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Window Scaffold** - NavigationSplitView main window with sidebar meeting list (complete 2026-03-21)
 - [x] **Phase 3: Past Meeting Detail** - Unified detail pane with transcript, metadata, and Slack copy (completed 2026-03-21)
 - [x] **Phase 4: Live Recording + Menu Bar Cleanup** - Live transcript in main window, stripped menu bar popover, legacy views deleted (completed 2026-03-22)
-- [ ] **Phase 5: Summary Engine + Settings** - Auto-generated structured summaries, settings as sidebar tab
+- [x] **Phase 5: Summary Engine + Settings** - Auto-generated structured summaries, settings as sidebar tab (completed 2026-03-22)
 - [ ] **Phase 6: Search + Export** - Full-text sidebar search and multi-page PDF export
 
 ## Phase Details
@@ -132,5 +132,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Window Scaffold | 2/2 | Complete | 2026-03-21 |
 | 3. Past Meeting Detail | 2/2 | Complete   | 2026-03-21 |
 | 4. Live Recording + Menu Bar Cleanup | 2/2 | Complete   | 2026-03-22 |
-| 5. Summary Engine + Settings | 1/2 | In Progress|  |
+| 5. Summary Engine + Settings | 2/2 | Complete   | 2026-03-22 |
 | 6. Search + Export | 0/2 | Not started | - |
