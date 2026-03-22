@@ -1,8 +1,10 @@
-import SwiftUI
 import AppKit
+import Sparkle
+import SwiftUI
 
 struct MainAppView: View {
     @Bindable var settings: AppSettings
+    let updater: SPUUpdater
     @Environment(AppCoordinator.self) private var coordinator
     @Environment(AppRuntime.self) private var runtime
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -15,7 +17,7 @@ struct MainAppView: View {
             MeetingSidebarView(selectedSessionID: $selectedSessionID)
                 .frame(minWidth: 220)
         } detail: {
-            DetailRouter(selectedSessionID: $selectedSessionID, settings: settings)
+            DetailRouter(selectedSessionID: $selectedSessionID, settings: settings, updater: updater)
         }
         .navigationSplitViewStyle(.balanced)
         .onChange(of: coordinator.isRecording) { _, isRecording in
@@ -27,6 +29,10 @@ struct MainAppView: View {
         .onChange(of: coordinator.lastEndedSession) { _, session in
             guard let session else { return }
             selectedSessionID = session.id
+        }
+        .onChange(of: coordinator.requestedSessionSelectionID) { _, _ in
+            guard let id = coordinator.consumeRequestedSessionSelection() else { return }
+            selectedSessionID = id
         }
         .onAppear {
             appDelegate.coordinator = coordinator

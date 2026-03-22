@@ -23,7 +23,7 @@ public struct OpenOatsRootApp: App {
 
     public var body: some Scene {
         Window("Papyrus", id: "main") {
-            MainAppView(settings: settings)
+            MainAppView(settings: settings, updater: updaterController.updater)
                 .environment(runtime)
                 .environment(coordinator)
                 .defaultAppStorage(defaults)
@@ -32,6 +32,14 @@ public struct OpenOatsRootApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 900, height: 600)
         .commands {
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings") {
+                    coordinator.queueSessionSelection("_settings_")
+                    showMainWindow()
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+
             CommandGroup(after: .appInfo) {
                 if case .live = runtime.mode {
                     CheckForUpdatesView(updater: updaterController.updater)

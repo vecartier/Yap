@@ -48,23 +48,39 @@ struct MeetingSidebarView: View {
     }
 
     var body: some View {
-        List(selection: $selectedSessionID) {
-            if coordinator.isRecording || isFinalizing {
-                LiveSessionRowView(coordinator: coordinator)
-                    .tag("_live_")
-            }
-            ForEach(groupedSessions(coordinator.sessionHistory), id: \.label) { group in
-                Section(group.label) {
-                    ForEach(group.sessions) { session in
-                        MeetingRowView(session: session)
-                            .tag(session.id)
+        VStack(spacing: 0) {
+            List(selection: $selectedSessionID) {
+                if coordinator.isRecording || isFinalizing {
+                    LiveSessionRowView(coordinator: coordinator)
+                        .tag("_live_")
+                }
+                ForEach(groupedSessions(coordinator.sessionHistory), id: \.label) { group in
+                    Section(group.label) {
+                        ForEach(group.sessions) { session in
+                            MeetingRowView(session: session)
+                                .tag(session.id)
+                        }
                     }
                 }
             }
-        }
-        .listStyle(.sidebar)
-        .task {
-            await coordinator.loadHistory()
+            .listStyle(.sidebar)
+            .task {
+                await coordinator.loadHistory()
+            }
+
+            Divider()
+
+            Button {
+                selectedSessionID = "_settings_"
+            } label: {
+                Label("Settings", systemImage: "gear")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+            .background(selectedSessionID == "_settings_" ? Color.accentColor.opacity(0.1) : Color.clear)
+            .accessibilityIdentifier("sidebar.settingsButton")
         }
     }
 }
